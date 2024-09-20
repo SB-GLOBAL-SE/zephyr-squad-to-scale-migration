@@ -26,17 +26,18 @@ public class ScaleTestCasePayloadFacade {
         this.jiraApi = jiraApi;
     }
 
-    public ScaleTestCaseCreationPayload createTestCasePayload(JiraIssuesResponse
-                                                                      issue, String projectKey) {
-
+    public ScaleTestCaseCreationPayload createTestCasePayload(JiraIssuesResponse issue, String projectKey) {
         var sanitizedPriority = sanitizePriority(issue.fields().priority);
+        
+        // Handle null reporter
+        String reporterKey = issue.fields().reporter != null ? issue.fields().reporter.key() : null;
 
         return new ScaleTestCaseCreationPayload(
                 projectKey,
                 issue.fields().summary,
                 convertJiraTextFormattingToHtml(issue.fields().description),
                 issue.fields().labels,
-                issue.fields().reporter.key(),
+                reporterKey, // Use the potentially null reporterKey
                 getIssueLinksIds(issue),
                 new ScaleTestCaseCustomFieldPayload(
                         getComponentsNames(issue),

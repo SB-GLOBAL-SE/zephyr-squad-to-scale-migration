@@ -53,7 +53,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
         return new ScaleExecutionCreationPayload(
                 translateSquadToScaleExecStatus(executionData.status().name()),
                 scaleTestCaseKey,
-                executedByValidation ? executionData.createdBy() : DEFAULT_NONE_USER,
+                executedByValidation ? executionData.createdBy() : null,
                 executionData.htmlComment(),
                 translateSquadToScaleVersion(executionData.versionName()),
                 new ScaleExecutionCustomFieldPayload(
