@@ -177,7 +177,7 @@ public class AttachmentsMigrator {
                             attachment.id(),
                             null,
                             attachment.size(),
-                            attachment.author().key(),
+                            attachment.author() == null ? null : attachment.author().key(),
                             projectId,
                             String.valueOf(scaleTestCaseEntity.get().id()),
                             new SquadOriginEntity(testCaseMapped.getKey().testCaseId(), testCaseMapped.getKey().testCaseKey()))).toList());

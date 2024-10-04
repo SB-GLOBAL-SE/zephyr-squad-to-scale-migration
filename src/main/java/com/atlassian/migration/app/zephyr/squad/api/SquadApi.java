@@ -26,7 +26,7 @@ public class SquadApi extends BaseApi {
             new SquadExecutionTypeResponse(3, "WIP"),
             new SquadExecutionTypeResponse(4, "Blocked"),
             new SquadExecutionTypeResponse(5, "Descoped"),
-            new SquadExecutionTypeResponse(6, "Not Delivered Yet"),
+            new SquadExecutionTypeResponse(6, "Retested"),
             new SquadExecutionTypeResponse(7, "On Hold")
     ).collect(Collectors.toMap(SquadExecutionTypeResponse::id, e -> e));
 

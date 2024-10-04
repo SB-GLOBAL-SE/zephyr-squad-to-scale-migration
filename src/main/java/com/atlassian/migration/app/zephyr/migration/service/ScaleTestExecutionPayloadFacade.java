@@ -74,6 +74,35 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
             return true;
         }
 
+        var fetchedAssignableUsers = jiraApi.fetchAssignableUserByUsernameAndProject(assignedUsername,
+                projectKey);
+
+        if (fetchedAssignableUsers.isEmpty()) {
+            unassignableUsers.add(assignedUsername);
+            return false;
+        }
+
+        var assignableUser = fetchedAssignableUsers.stream().filter(user -> isSameUser(user, assignedUsername)).toList();
+
+        if (assignableUser.size() > 1) {
+            throw new ApiException(-1, "Multiple users found for the same username: " + assignedUsername);
+        }
+
+        assignableUsers.add(assignedUsername);
+        
+        return true;
+    }
+    
+    /* 
+    private Boolean validateAssignedUser(String assignedUsername, String projectKey) throws IOException {
+        if (assignedUsername == null
+                || assignedUsername.isBlank()
+                || unassignableUsers.contains(assignedUsername)) {
+            return false;
+        } else if (assignableUsers.contains(assignedUsername)) {
+            return true;
+        }
+
         var assignableUser = jiraApi.fetchAssignableUserByUsernameAndProject(assignedUsername,
                 projectKey);
 
@@ -93,7 +122,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
 
         throw new ApiException(-1, "Error on Assigned User checking for user: " + assignedUsername);
     }
-
+        */
     private boolean isSameUser(AssignableUserResponse fetchedUser, String assignedUser) {
         return fetchedUser.name().equals(assignedUser);
     }

@@ -30,7 +30,9 @@ public class ScaleTestCasePayloadFacade {
         var sanitizedPriority = sanitizePriority(issue.fields().priority);
         
         // Handle null reporter
-        String reporterKey = issue.fields().reporter != null ? issue.fields().reporter.key() : null;
+        String reporterKey = (issue.fields().reporter != null && issue.fields().reporter.key() != null) 
+                             ? issue.fields().reporter.key() 
+                             : null;
 
         return new ScaleTestCaseCreationPayload(
                 projectKey,
