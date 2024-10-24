@@ -164,6 +164,18 @@ class JiraApiTest {
         }
 
         @Test
+        void shouldGetNullIssueAttachmentsByIssueId() throws IOException {
+
+            var attachmentsExpected = Collections.emptyList();
+            var responseMock = "{id:10101,key:JIRA-1,fields:{}}";
+
+            doReturn(responseMock).when(jiraApiSpy).sendHttpGet(any());
+
+            var attachmentsFetched = jiraApiSpy.getIssueAttachmentsByIssueId("10101");
+            assertEquals(attachmentsExpected, attachmentsFetched);
+        }
+
+        @Test
         void shouldGetIssuesOrderedByCreatedDateWithoutRetry() throws IOException {
 
             var issuesExpected = List.of(issueExpected_1, issueExpected_2);
