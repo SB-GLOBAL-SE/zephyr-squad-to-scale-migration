@@ -84,7 +84,7 @@ public class ScaleTestCasePayloadFacadeTest {
                 "description",
                 Collections.emptyList(),
                 "REP",
-                List.of("JIRA-100"),
+                List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links
                 new ScaleTestCaseCustomFieldPayload(
                         "component,component2",
                         "status_name",
@@ -111,7 +111,7 @@ public class ScaleTestCasePayloadFacadeTest {
                 "description",
                 Collections.emptyList(),
                 "REP",
-                List.of("JIRA-100"),
+                List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links
                 new ScaleTestCaseCustomFieldPayload(
                         "component,component2",
                         "status_name",
@@ -127,60 +127,61 @@ public class ScaleTestCasePayloadFacadeTest {
 
     @Test
     void shouldCreateTestCaseWithEmptyPriorityIfPriorityNameIsNullOrEmpty() throws IOException {
-
+    
         when(jiraApiMock.convertJiraTextFormattingToHtml(any())).thenReturn("description");
-
+    
         jiraIssueFieldResponseMock.priority = new JiraIssuePriority(1, "");
-
+    
         var expectedPayload = new ScaleTestCaseCreationPayload(
                 projectKeyMock,
                 "summary",
                 "description",
                 Collections.emptyList(),
                 "REP",
-                List.of("JIRA-100"),
+                List.of("JIRA-100", "JIRA-99"),  // Include both issue links
                 new ScaleTestCaseCustomFieldPayload(
                         "component,component2",
                         "status_name",
-                        ""
+                        ""  // Expect empty squadPriority
                 )
         );
-
+    
         var receivedPayloadEmpty = sutScaleTestCasePayloadFacade
                 .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
-
+    
         jiraIssueFieldResponseMock.priority = new JiraIssuePriority(1, null);
-
+    
         var receivedPayloadNull = sutScaleTestCasePayloadFacade
                 .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
-
+    
         assertEquals(expectedPayload, receivedPayloadEmpty);
         assertEquals(expectedPayload, receivedPayloadNull);
     }
-
+    
 
     @Test
     void shouldNotCallConvertToHtmlIfDescriptionIsEmpty() throws IOException {
-
+    
         var expectedPayload = new ScaleTestCaseCreationPayload(
                 projectKeyMock,
                 "summary",
                 "",
                 Collections.emptyList(),
                 "REP",
-                List.of("JIRA-100"),
+                List.of("JIRA-100", "JIRA-99"),  // Include both issue links
                 new ScaleTestCaseCustomFieldPayload(
                         "component,component2",
                         "status_name",
                         "HIGH"
                 )
         );
+    
         jiraIssueFieldResponseMock.description = "";
+    
         var receivedPayload = sutScaleTestCasePayloadFacade
                 .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
-
-
+    
         verify(jiraApiMock, never()).convertJiraTextFormattingToHtml(any());
         assertEquals(expectedPayload, receivedPayload);
-    }
-}
+    }}
+    
