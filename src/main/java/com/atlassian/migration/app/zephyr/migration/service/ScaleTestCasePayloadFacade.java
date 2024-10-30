@@ -9,6 +9,7 @@ import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCustomFieldPa
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.stream.Stream;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -77,8 +78,11 @@ public class ScaleTestCasePayloadFacade {
 
     private List<String> getIssueLinksIds(JiraIssuesResponse issue) {
         return issue.fields().issuelinks.stream()
-                .filter(e -> e.outwardIssue() != null)
-                .map(e -> e.outwardIssue().key())
+                .flatMap(e -> {
+                    Stream<String> outward = e.outwardIssue() != null ? Stream.of(e.outwardIssue().key()) : Stream.empty();
+                    Stream<String> inward = e.inwardIssue() != null ? Stream.of(e.inwardIssue().key()) : Stream.empty();
+                    return Stream.concat(outward, inward);
+                })
                 .toList();
     }
 
