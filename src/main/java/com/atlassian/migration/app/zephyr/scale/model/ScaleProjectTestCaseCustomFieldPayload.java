@@ -13,6 +13,7 @@ public class ScaleProjectTestCaseCustomFieldPayload {
     public static final ScaleTestCaseCustomField moduleLibraryCf = new ScaleTestCaseCustomField(
                     "Module Library",
                     SINGLE_CHOICE_SELECT_LIST,
+                    "Select Yes if this TEST is part of Module Library/Generic Test Case",
                     List.of(
                             new ScaleTestCaseCustomFieldOption("Yes",0,false),
                             new ScaleTestCaseCustomFieldOption("No",1,false)
@@ -21,6 +22,7 @@ public class ScaleProjectTestCaseCustomFieldPayload {
     public static final ScaleTestCaseCustomField testTypeCf = new ScaleTestCaseCustomField(
             "Test Type",
             SINGLE_CHOICE_SELECT_LIST,
+            "Type of TEST",
             List.of(
                     new ScaleTestCaseCustomFieldOption("Accessibility",0,false),
                     new ScaleTestCaseCustomFieldOption("Alpha",1,false),
@@ -37,6 +39,7 @@ public class ScaleProjectTestCaseCustomFieldPayload {
     public static final ScaleTestCaseCustomField testTypeDetailCf = new ScaleTestCaseCustomField(
             "Test Type Detail",
             SINGLE_CHOICE_SELECT_LIST,
+            "Type of TEST",
             List.of(
                     new ScaleTestCaseCustomFieldOption("Progression",0,false),
                     new ScaleTestCaseCustomFieldOption("Regression",1,false)
@@ -45,14 +48,16 @@ public class ScaleProjectTestCaseCustomFieldPayload {
     public static final ScaleTestCaseCustomField testCaseClassificationCf = new ScaleTestCaseCustomField(
             "Test Case Classification",
             SINGLE_CHOICE_SELECT_LIST,
+            "",
             List.of(
-                    new ScaleTestCaseCustomFieldOption("Positive Scenario",0,false),
-                    new ScaleTestCaseCustomFieldOption("Negative Scenario",1,false)
+                    new ScaleTestCaseCustomFieldOption("Positive scenario",0,false),
+                    new ScaleTestCaseCustomFieldOption("Negative scenario",1,false)
             ));
 
     public static final ScaleTestCaseCustomField testCaseCoverageCf = new ScaleTestCaseCustomField(
             "Test Case Coverage",
             SINGLE_CHOICE_SELECT_LIST,
+            "",
             List.of(
                     new ScaleTestCaseCustomFieldOption("High",0,false),
                     new ScaleTestCaseCustomFieldOption("Medium",1,false),
@@ -62,6 +67,7 @@ public class ScaleProjectTestCaseCustomFieldPayload {
     public static final ScaleTestCaseCustomField testAutomationToolCf = new ScaleTestCaseCustomField(
             "Test Automation Tool",
             SINGLE_CHOICE_SELECT_LIST,
+            "",
             List.of(
                     new ScaleTestCaseCustomFieldOption("N/A", 0, false),
                     new ScaleTestCaseCustomFieldOption("Appium - Android", 1, false),
@@ -77,6 +83,7 @@ public class ScaleProjectTestCaseCustomFieldPayload {
     public static final ScaleTestCaseCustomField automationStatusCf = new ScaleTestCaseCustomField(
             "Automation Status",
             SINGLE_CHOICE_SELECT_LIST,
+            "Status of automation of TEST",
             List.of(
                     new ScaleTestCaseCustomFieldOption("To be reviewed",0,false),
                     new ScaleTestCaseCustomFieldOption("Not scriptable",1,false),
@@ -88,6 +95,7 @@ public class ScaleProjectTestCaseCustomFieldPayload {
     public static final ScaleTestCaseCustomField testCICf = new ScaleTestCaseCustomField(
             "Test CI",
             SINGLE_CHOICE_SELECT_LIST,
+            "Denote if automation is done via continuous integration.",
             List.of(
                     new ScaleTestCaseCustomFieldOption("N/A",0,false),
                     new ScaleTestCaseCustomFieldOption("Yes",1,false),
@@ -97,6 +105,7 @@ public class ScaleProjectTestCaseCustomFieldPayload {
     public static final ScaleTestCaseCustomField interfaceTouchPointCf = new ScaleTestCaseCustomField(
             "Interface Touch Point/s",
             MULTI_LINE_TEXT,
+            "List of interfacing applications impacted by TEST",
             Collections.emptyList());
 
     public static final Map<String, ScaleTestCaseCustomField> CUSTOM_FIELD_ID_TO_NAMES = Map.of (

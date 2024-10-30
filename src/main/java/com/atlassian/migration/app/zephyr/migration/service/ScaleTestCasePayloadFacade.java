@@ -77,17 +77,36 @@ public class ScaleTestCasePayloadFacade {
 
     private String getCustomFieldValue(Map.Entry<String, Object> customFieldMetadata, ScaleTestCaseCustomField customFieldProps){
 
-        if(customFieldMetadata.getValue() == null) {
+        try {
 
-            return switch (customFieldProps.type()) {
-                case ScaleCustomFieldPayload.SINGLE_CHOICE_SELECT_LIST -> null;
-                case ScaleCustomFieldPayload.MULTI_LINE_TEXT -> "";
-                default -> null;
-            };
+            switch (customFieldProps.type()) {
+                case ScaleCustomFieldPayload.SINGLE_CHOICE_SELECT_LIST -> {
+                    if (customFieldMetadata.getValue() == null) {
+                        return null;
+                    }
+                    var customFieldData = (Map<String, Object>) customFieldMetadata.getValue();
+                    return (String) customFieldData.get("value");
+                }
+                case ScaleCustomFieldPayload.MULTI_LINE_TEXT -> {
+                    if (customFieldMetadata.getValue() == null) {
+                        return "";
+                    }
+                    return (String) customFieldMetadata.getValue();
+                }
+                default -> {
+                    logger.warn("Custom field type not supported: " + customFieldProps.type());
+                    return null;
+                }
+            }
+
+        }catch (Exception e){
+            System.out.println("Error: " + e.getMessage());
+            System.out.println("customFieldMetadata: " + customFieldMetadata);
+
+            System.exit(1);
         }
-        var customFieldData = (Map<String, Object>) customFieldMetadata.getValue();
-        return (String) customFieldData.get("value");
 
+        return "";
     }
 
     private String sanitizePriority(JiraIssuePriority squadPriority) {
