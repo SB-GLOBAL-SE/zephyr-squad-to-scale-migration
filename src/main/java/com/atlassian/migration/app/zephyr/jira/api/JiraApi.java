@@ -116,8 +116,7 @@ public class JiraApi extends BaseApi {
 
     }
 
-
-    private FetchJiraIssuesResponse extractCustomFieldsFromResponse(String jiraIssuesPayloadResponse, FetchJiraIssuesResponse jiraIssues){
+    public FetchJiraIssuesResponse extractCustomFieldsFromResponse(String jiraIssuesPayloadResponse, FetchJiraIssuesResponse jiraIssues){
 
         Map<String, Map<String, Object>> issuesCustomField = new HashMap<>();
         Map<String, Object> payloadMap = gson.fromJson(jiraIssuesPayloadResponse, Map.class);
@@ -128,7 +127,7 @@ public class JiraApi extends BaseApi {
             var fields = (Map<String, Object>) issueMap.get("fields");
 
             fields.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith("customfield_") && entry.getValue() != null)
+                    .filter(entry -> entry.getKey().startsWith("customfield_"))
                     .forEach(entry -> issuesCustomField.computeIfAbsent(issueId, k -> new HashMap<>())
                             .put(entry.getKey(), entry.getValue()));
 

@@ -5,12 +5,13 @@ import com.atlassian.migration.app.zephyr.jira.model.JiraIssueComponent;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuePriority;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCreationPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCustomFieldPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -34,6 +35,12 @@ public class ScaleTestCasePayloadFacade {
                              ? issue.fields().reporter.key() 
                              : null;
 
+        Map<String,Object> scaleCustomFields = new HashMap<>();
+
+        scaleCustomFields.put("components", getComponentsNames(issue));
+        scaleCustomFields.put("squadStatus", issue.fields().status.name());
+        scaleCustomFields.put("squadPriority", sanitizedPriority);
+
         return new ScaleTestCaseCreationPayload(
                 projectKey,
                 issue.fields().summary,
@@ -41,11 +48,7 @@ public class ScaleTestCasePayloadFacade {
                 issue.fields().labels,
                 reporterKey, // Use the potentially null reporterKey
                 getIssueLinksIds(issue),
-                new ScaleTestCaseCustomFieldPayload(
-                        getComponentsNames(issue),
-                        issue.fields().status.name(),
-                        sanitizedPriority
-                )
+                scaleCustomFields
         );
     }
 

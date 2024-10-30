@@ -274,7 +274,7 @@ public class ScaleApiTest {
         @Test
         void shouldCallCreateCustomFieldEndpointOnlyOnce() throws ApiException, ZephyrApiException {
 
-            doReturn("").when(scaleApiSpy).sendHttpPost(ScaleApi.CREATE_CUSTOM_FIELD_ENDPOINT,
+            doReturn("{id:1}").when(scaleApiSpy).sendHttpPost(ScaleApi.CREATE_CUSTOM_FIELD_ENDPOINT,
                     scaleCustomFieldPayload);
 
             scaleApiSpy.createCustomField(scaleCustomFieldPayload);

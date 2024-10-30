@@ -3,7 +3,7 @@ package com.atlassian.migration.app.zephyr.migration.service;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.*;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCreationPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCustomFieldPayload;
+import com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationTestCaseCustomFieldPayload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -85,10 +86,10 @@ public class ScaleTestCasePayloadFacadeTest {
                 Collections.emptyList(),
                 "REP",
                 List.of("JIRA-100"),
-                new ScaleTestCaseCustomFieldPayload(
-                        "component,component2",
-                        "status_name",
-                        "HIGH"
+                Map.of(
+                        "components", "component,component2",
+                        "squadStatus", "status_name",
+                        "squadPriority", "HIGH"
                 )
         );
 
@@ -112,10 +113,10 @@ public class ScaleTestCasePayloadFacadeTest {
                 Collections.emptyList(),
                 "REP",
                 List.of("JIRA-100"),
-                new ScaleTestCaseCustomFieldPayload(
-                        "component,component2",
-                        "status_name",
-                        "Medium"
+                Map.of(
+                        "components", "component,component2",
+                        "squadStatus", "status_name",
+                        "squadPriority", "Medium"
                 )
         );
 
@@ -139,10 +140,10 @@ public class ScaleTestCasePayloadFacadeTest {
                 Collections.emptyList(),
                 "REP",
                 List.of("JIRA-100"),
-                new ScaleTestCaseCustomFieldPayload(
-                        "component,component2",
-                        "status_name",
-                        ""
+                Map.of(
+                        "components", "component,component2",
+                        "squadStatus", "status_name",
+                        "squadPriority", ""
                 )
         );
 
@@ -169,10 +170,10 @@ public class ScaleTestCasePayloadFacadeTest {
                 Collections.emptyList(),
                 "REP",
                 List.of("JIRA-100"),
-                new ScaleTestCaseCustomFieldPayload(
-                        "component,component2",
-                        "status_name",
-                        "HIGH"
+                Map.of(
+                        "components", "component,component2",
+                        "squadStatus", "status_name",
+                        "squadPriority", "HIGH"
                 )
         );
         jiraIssueFieldResponseMock.description = "";
