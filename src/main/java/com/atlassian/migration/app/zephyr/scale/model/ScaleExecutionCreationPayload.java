@@ -6,5 +6,5 @@ public record ScaleExecutionCreationPayload(
         Object executedBy,
         Object comment,
         String version,
-        ScaleExecutionCustomFieldPayload customFields) {
+        ScaleMigrationExecutionCustomFieldPayload customFields) {
 }

@@ -4,7 +4,7 @@ import com.atlassian.migration.app.zephyr.common.ApiException;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.AssignableUserResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionCreationPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionCustomFieldPayload;
+import com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationExecutionCustomFieldPayload;
 import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionItemParsedResponse;
 
 import java.io.IOException;
@@ -56,7 +56,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
                 executedByValidation ? executionData.createdBy() : null,
                 executionData.htmlComment(),
                 translateSquadToScaleVersion(executionData.versionName()),
-                new ScaleExecutionCustomFieldPayload(
+                new ScaleMigrationExecutionCustomFieldPayload(
                         executionData.executedOnOrStr(),
                         assignedToValidation ? executionData.assignedTo() : DEFAULT_NONE_USER,
                         translateSquadToScaleVersion(executionData.versionName()),

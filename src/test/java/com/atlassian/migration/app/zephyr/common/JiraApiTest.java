@@ -121,9 +121,12 @@ class JiraApiTest {
 
         @Test
         void shouldGetTotalNumberOfIssues() throws IOException {
-
-            doReturn("{startAt:0,total:10}").when(jiraApiSpy)
+            var mockPayload = "{startAt:0,total:10}";
+            doReturn(mockPayload).when(jiraApiSpy)
                     .sendHttpGet(any());
+
+            doReturn(gson.fromJson(mockPayload, FetchJiraIssuesResponse.class))
+                    .when(jiraApiSpy).extractCustomFieldsFromResponse(any(), any());
 
             int totalIssues = jiraApiSpy.fetchTotalIssuesByProjectName("project");
 
@@ -182,6 +185,9 @@ class JiraApiTest {
 
             doReturn(RESPONSE_WITH_TWO_ISSUES_MOCK).when(jiraApiSpy).sendHttpGet(any());
 
+            doReturn(gson.fromJson(RESPONSE_WITH_TWO_ISSUES_MOCK, FetchJiraIssuesResponse.class))
+                    .when(jiraApiSpy).extractCustomFieldsFromResponse(any(), any());
+
             var issuesFetched = jiraApiSpy.fetchIssuesOrderedByCreatedDate("project", 0, 100);
 
             assertEquals(issuesExpected, issuesFetched);
@@ -194,6 +200,9 @@ class JiraApiTest {
             var issuesExpected = List.of(issueExpected_1, issueExpected_2);
 
             doReturn(RESPONSE_WITH_TWO_ISSUES_MOCK).when(jiraApiSpy).sendHttpGet(any());
+
+            doReturn(gson.fromJson(RESPONSE_WITH_TWO_ISSUES_MOCK, FetchJiraIssuesResponse.class))
+                    .when(jiraApiSpy).extractCustomFieldsFromResponse(any(), any());
 
             var issuesFetched = jiraApiSpy.fetchIssuesOrderedByCreatedDate("project", 0, 100);
 
