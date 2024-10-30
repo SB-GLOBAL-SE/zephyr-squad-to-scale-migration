@@ -4,7 +4,10 @@ import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssueComponent;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuePriority;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
+import com.atlassian.migration.app.zephyr.scale.model.ScaleCustomFieldPayload;
+import com.atlassian.migration.app.zephyr.scale.model.ScaleProjectTestCaseCustomFieldPayload;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCreationPayload;
+import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCustomField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +43,7 @@ public class ScaleTestCasePayloadFacade {
         scaleCustomFields.put("components", getComponentsNames(issue));
         scaleCustomFields.put("squadStatus", issue.fields().status.name());
         scaleCustomFields.put("squadPriority", sanitizedPriority);
+        scaleCustomFields.putAll(getCustomFieldsToMigrate(issue));
 
         return new ScaleTestCaseCreationPayload(
                 projectKey,
@@ -50,6 +54,40 @@ public class ScaleTestCasePayloadFacade {
                 getIssueLinksIds(issue),
                 scaleCustomFields
         );
+    }
+
+    private Map<String, Object> getCustomFieldsToMigrate(JiraIssuesResponse issue) {
+
+        Map<String, Object> mappedCustomFieldAndValues = new HashMap<>();
+        var customFieldsToMigrate = ScaleProjectTestCaseCustomFieldPayload.CUSTOM_FIELD_ID_TO_NAMES.keySet();
+
+        issue.fields().customFields.entrySet().stream()
+                .filter( customField ->customFieldsToMigrate.contains(customField.getKey()))
+                .forEach(customFieldMetadata -> {
+                    var customFieldProps = ScaleProjectTestCaseCustomFieldPayload
+                            .CUSTOM_FIELD_ID_TO_NAMES
+                            .get(customFieldMetadata.getKey());
+
+                    mappedCustomFieldAndValues.put(customFieldProps.name(),
+                            getCustomFieldValue(customFieldMetadata, customFieldProps));
+                });
+
+        return mappedCustomFieldAndValues;
+    }
+
+    private String getCustomFieldValue(Map.Entry<String, Object> customFieldMetadata, ScaleTestCaseCustomField customFieldProps){
+
+        if(customFieldMetadata.getValue() == null) {
+
+            return switch (customFieldProps.type()) {
+                case ScaleCustomFieldPayload.SINGLE_CHOICE_SELECT_LIST -> null;
+                case ScaleCustomFieldPayload.MULTI_LINE_TEXT -> "";
+                default -> null;
+            };
+        }
+        var customFieldData = (Map<String, Object>) customFieldMetadata.getValue();
+        return (String) customFieldData.get("value");
+
     }
 
     private String sanitizePriority(JiraIssuePriority squadPriority) {

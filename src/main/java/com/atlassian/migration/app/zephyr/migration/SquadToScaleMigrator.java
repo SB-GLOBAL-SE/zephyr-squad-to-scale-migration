@@ -1,6 +1,7 @@
 package com.atlassian.migration.app.zephyr.migration;
 
 import com.atlassian.migration.app.zephyr.common.ProgressBarUtil;
+import com.atlassian.migration.app.zephyr.common.ZephyrApiException;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
 import com.atlassian.migration.app.zephyr.migration.model.SquadToScaleEntitiesMap;
@@ -19,9 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SquadToScaleMigrator {
@@ -96,6 +95,9 @@ public class SquadToScaleMigrator {
             logger.info("Creating migration Custom Fields...");
             createMigrationCustomFields(projectKey);
 
+            logger.info("Creating project Custom Fields...");
+            createProjectCustomFields(projectKey);
+
             var startAt = 0;
             long startTimeMillis = System.currentTimeMillis();
             while (startAt < total) {
@@ -138,12 +140,48 @@ public class SquadToScaleMigrator {
     }
 
 
+    private void createProjectCustomFields(String projectKey){
+        try{
+            var projectCustomFields = ScaleProjectTestCaseCustomFieldPayload.CUSTOM_FIELD_ID_TO_NAMES;
+
+            for(var customField : projectCustomFields.values()){
+                logger.info("Creating Project Custom Field " + customField.name() + " ...");
+                var customFieldId = scaleApi.createCustomField(
+                        new ScaleCustomFieldPayload(
+                                customField.name(),
+                                "TEST_CASE",
+                                projectKey,
+                                customField.type()
+                        ));
+
+                if (customFieldId != null && !customFieldId.isBlank()
+                        && customField.type().equals(ScaleCustomFieldPayload.SINGLE_CHOICE_SELECT_LIST)){
+                    for(var option : customField.options()){
+                        scaleApi.addOptionToCustomField(customFieldId, option);
+                    }
+                }
+                logger.info("Project Custom Field " + customField.name() + " created successfully.");
+            }
+
+        } catch (IOException exception) {
+            logger.error("Failed to create project custom fields " + exception.getMessage(),
+                    exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
+
     private void createMigrationCustomFields(String projectKey) {
         try {
+
             Map<String, List<String>> mapCustomFieldsToCreate = Map.of(
-                    ScaleTestCaseCustomFieldPayload.ENTITY_TYPE, ScaleTestCaseCustomFieldPayload.CUSTOM_FIELDS_NAMES,
-                    ScaleExecutionCustomFieldPayload.ENTITY_TYPE, ScaleExecutionCustomFieldPayload.CUSTOM_FIELDS_NAMES
+                    ScaleMigrationTestCaseCustomFieldPayload.ENTITY_TYPE, ScaleMigrationTestCaseCustomFieldPayload.CUSTOM_FIELDS_NAMES,
+                    ScaleMigrationExecutionCustomFieldPayload.ENTITY_TYPE, ScaleMigrationExecutionCustomFieldPayload.CUSTOM_FIELDS_NAMES
             );
+
+            Map<String, String> customFieldToType = new HashMap<>();
+            customFieldToType.putAll(ScaleMigrationTestCaseCustomFieldPayload.MIGRATION_CUSTOM_FIELDS);
+            customFieldToType.putAll(ScaleMigrationExecutionCustomFieldPayload.CUSTOM_FIELD_TO_TYPE);
 
             for (var customFieldToCreate : mapCustomFieldsToCreate.entrySet()) {
 
@@ -155,7 +193,7 @@ public class SquadToScaleMigrator {
                                     customFieldName,
                                     customFieldToCreate.getKey(),
                                     projectKey,
-                                    ScaleCustomFieldPayload.TYPE_SINGLE_LINE_TEXT
+                                    customFieldToType.get(customFieldName)
                             )
                     );
                     logger.info("Migration Custom Field " + customFieldName + " created successfully.");
