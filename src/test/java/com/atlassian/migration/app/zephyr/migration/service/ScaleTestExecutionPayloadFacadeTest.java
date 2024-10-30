@@ -3,7 +3,7 @@ package com.atlassian.migration.app.zephyr.migration.service;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.AssignableUserResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionCreationPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionCustomFieldPayload;
+import com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationExecutionCustomFieldPayload;
 import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionItemParsedResponse;
 import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionTypeResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +58,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
-                new ScaleExecutionCustomFieldPayload(
+                new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "assignee",
                         "version",
@@ -122,7 +122,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
-                new ScaleExecutionCustomFieldPayload(
+                new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "assignee",
                         "version",
@@ -137,7 +137,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
-                new ScaleExecutionCustomFieldPayload(
+                new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "assignee",
                         "version",
@@ -194,7 +194,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 null,
-                new ScaleExecutionCustomFieldPayload(
+                new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "assignee",
                         null,
@@ -244,7 +244,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
-                new ScaleExecutionCustomFieldPayload(
+                new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "None",
                         "version",
@@ -291,7 +291,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
-                new ScaleExecutionCustomFieldPayload(
+                new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "None",
                         "version",

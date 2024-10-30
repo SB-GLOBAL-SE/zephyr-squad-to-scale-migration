@@ -1,6 +1,8 @@
 package com.atlassian.migration.app.zephyr.jira.model;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ArrayList;
 
@@ -17,6 +19,8 @@ public class JiraIssueFieldResponse {
     public JiraIssuePriority priority;
     public List<Attachment> attachment = new ArrayList<>();
 
+    public Map<String, Object> customFields = new HashMap<>();
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -31,11 +35,12 @@ public class JiraIssueFieldResponse {
                 && Objects.equals(issuelinks, that.issuelinks)
                 && Objects.equals(components, that.components)
                 && Objects.equals(priority, that.priority)
-                && Objects.equals(attachment, that.attachment);
+                && Objects.equals(attachment, that.attachment)
+                && Objects.equals(customFields, that.customFields);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(issuetype, summary, description, labels, reporter, status, issuelinks, components, priority, attachment);
+        return Objects.hash(issuetype, summary, description, labels, reporter, status, issuelinks, components, priority, attachment, customFields);
     }
 }

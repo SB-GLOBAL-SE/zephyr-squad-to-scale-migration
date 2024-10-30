@@ -22,6 +22,7 @@ public class ScaleApi extends BaseApi {
 
     public static final String ENABLE_PROJECT_ENDPOINT = "/rest/atm/1.0/project";
     public static final String CREATE_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield";
+    public static final String ADD_OPTION_TO_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield/%s/option";
     public static final String CREATE_SCALE_TEST_CASE_ENDPOINT = "/rest/atm/1.0/testcase";
     public static final String SCALE_TEST_STEP_ENDPOINT = "/rest/atm/1.0/testcase/%s";
     public static final String CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT = "/rest/atm/1.0/testrun";
@@ -119,21 +120,44 @@ public class ScaleApi extends BaseApi {
         }
     }
 
-    public void createCustomField(ScaleCustomFieldPayload scaleCustomFieldPayload) throws ZephyrApiException {
+    public String createCustomField(ScaleCustomFieldPayload scaleCustomFieldPayload) throws ZephyrApiException {
 
         try {
-            sendHttpPost(CREATE_CUSTOM_FIELD_ENDPOINT, scaleCustomFieldPayload);
+            var response = sendHttpPost(CREATE_CUSTOM_FIELD_ENDPOINT, scaleCustomFieldPayload);
+
+            var createdCustomField = gson.fromJson(response, Map.class);
+            Object customFieldId =  createdCustomField.get("id");
+
+            if(customFieldId instanceof Double){
+                return String.valueOf(((Double) customFieldId).longValue());
+            }
+
+            return String.valueOf(customFieldId);
+
         } catch (ApiException e) {
             //While creating a custom field that already exists, Scale API returns a 400 status with the
             //message "Custom field name is duplicated". Catching it here and ignoring this status
             if (e.code == 400 && e.getMessage().contains(CUSTOM_FIELD_DUPLICATED_EXPECTED_MESSAGE)) {
-                return;
+                return "";
             }
 
             ScaleApiErrorLogger.logAndThrow(
                     ScaleApiErrorLogger.ERROR_CREATE_CUSTOM_FIELD, e
             );
 
+            return "";
+
+        }
+    }
+
+    public void addOptionToCustomField(String customFieldId, ScaleTestCaseCustomFieldOption option) throws ZephyrApiException {
+        try {
+            sendHttpPost(String.format(ADD_OPTION_TO_CUSTOM_FIELD_ENDPOINT, customFieldId), option);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(
+                    "Error while adding option to custom field at " + String.format(ADD_OPTION_TO_CUSTOM_FIELD_ENDPOINT, customFieldId),
+                    e
+            );
         }
     }
 

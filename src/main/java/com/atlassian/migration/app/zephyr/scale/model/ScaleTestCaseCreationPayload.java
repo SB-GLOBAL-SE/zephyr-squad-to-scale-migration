@@ -1,6 +1,7 @@
 package com.atlassian.migration.app.zephyr.scale.model;
 
 import java.util.List;
+import java.util.Map;
 
 public record ScaleTestCaseCreationPayload(
         String projectKey,
@@ -9,6 +10,6 @@ public record ScaleTestCaseCreationPayload(
         List<String> labels,
         String owner,
         List<String> issueLinks,
-        ScaleTestCaseCustomFieldPayload customFields
+        Map<String, Object> customFields
 ) {
 }
