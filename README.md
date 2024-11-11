@@ -6,7 +6,9 @@ This script executes a Migration From Zephyr Squad to Zephyr Scale on Jira DC/Se
 instance, aiming Customer that wishes to migrate from app to another before migrating to Jira to Cloud.
 It uses Jira, Squad and Scale APIs to read and insert entities, executes some queries on Zephyr Scale Database
 to fetch complementary data to help the migration and generates a CSV file with the mapping of the attachments to be
-latter inserted
+latter inserted.
+
+Note: This script does not migrate all data from Squad to Scale. It is purely a framework to help users/partners get started. 
 
 ## Usage
 
