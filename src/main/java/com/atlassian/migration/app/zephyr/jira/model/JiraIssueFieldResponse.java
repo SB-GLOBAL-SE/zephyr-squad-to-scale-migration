@@ -2,6 +2,7 @@ package com.atlassian.migration.app.zephyr.jira.model;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.ArrayList;
 
 public class JiraIssueFieldResponse {
     public JiraIssueTypeResponse issuetype;
@@ -14,7 +15,7 @@ public class JiraIssueFieldResponse {
     public List<IssueLink> issuelinks;
     public List<JiraIssueComponent> components;
     public JiraIssuePriority priority;
-    public List<Attachment> attachment;
+    public List<Attachment> attachment = new ArrayList<>();
 
     @Override
     public boolean equals(Object o) {

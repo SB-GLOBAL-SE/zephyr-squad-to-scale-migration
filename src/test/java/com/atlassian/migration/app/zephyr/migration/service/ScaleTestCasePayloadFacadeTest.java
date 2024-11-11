@@ -84,7 +84,9 @@ public class ScaleTestCasePayloadFacadeTest {
                 "description",
                 Collections.emptyList(),
                 "REP",
-                List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links
+
+                List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
+
                 new ScaleTestCaseCustomFieldPayload(
                         "component,component2",
                         "status_name",
@@ -111,7 +113,9 @@ public class ScaleTestCasePayloadFacadeTest {
                 "description",
                 Collections.emptyList(),
                 "REP",
-                List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links
+
+                List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
+
                 new ScaleTestCaseCustomFieldPayload(
                         "component,component2",
                         "status_name",
@@ -138,7 +142,9 @@ public class ScaleTestCasePayloadFacadeTest {
                 "description",
                 Collections.emptyList(),
                 "REP",
-                List.of("JIRA-100", "JIRA-99"),  // Include both issue links
+
+                List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
+
                 new ScaleTestCaseCustomFieldPayload(
                         "component,component2",
                         "status_name",
@@ -168,7 +174,9 @@ public class ScaleTestCasePayloadFacadeTest {
                 "",
                 Collections.emptyList(),
                 "REP",
-                List.of("JIRA-100", "JIRA-99"),  // Include both issue links
+
+                List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
+
                 new ScaleTestCaseCustomFieldPayload(
                         "component,component2",
                         "status_name",
