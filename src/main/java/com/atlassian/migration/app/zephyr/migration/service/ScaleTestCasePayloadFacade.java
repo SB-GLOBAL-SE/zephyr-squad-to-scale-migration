@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class ScaleTestCasePayloadFacade {
@@ -84,7 +85,8 @@ public class ScaleTestCasePayloadFacade {
                     return Stream.concat(outward, inward);
                 })
                 .toList();
-    }
+}
+
 
     private String getComponentsNames(JiraIssuesResponse issues) {
         return issues.fields().components.stream().map(JiraIssueComponent::name).collect(Collectors.joining(","));
