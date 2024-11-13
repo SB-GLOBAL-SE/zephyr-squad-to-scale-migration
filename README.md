@@ -27,8 +27,7 @@ This script can be run in two different modes:
 When the script finishes running, it will have migrated Squad Entities to Scale, copied all Attachments from Zephyr
 Squad Entities to Zephyr Scale and generated a CSV file with the
 attachments mapping. This file must be imported in the Zephyr Scale table `AO_4D28DD_ATTACHMENT` and to do so you can
-use a third party tool like [DBeaver](https://dbeaver.io/)
-or [MySQL Workbench](https://dev.mysql.com/downloads/workbench/) or a command line, like so:
+use a command line, like so:
 
 _Postgresql only_
 
