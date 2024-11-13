@@ -2,8 +2,8 @@
 
 [![Atlassian license](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat-square)](LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
-This script executes a Migration From Zephyr Squad to Zephyr Scale on Jira DC/Server, with both apps o the same
-instance, aiming Customer that wishes to migrate from app to another before migrating to Jira to Cloud.
+This script executes a Migration From Zephyr Squad to Zephyr Scale on Jira DC/Server, with both apps on the same
+instance, aiming customer that wishes to migrate from app to another before migrating to Jira to Cloud.
 It uses Jira, Squad and Scale APIs to read and insert entities, executes some queries on Zephyr Scale Database
 to fetch complementary data to help the migration and generates a CSV file with the mapping of the attachments to be
 latter inserted.
@@ -129,6 +129,7 @@ batchSize=100
 attachmentsMappedCsvFile=AO_4D28DD_ATTACHMENT.csv
 database=postgresql
 attachmentsBaseFolder=/home/ubuntu/jira/data/attachments/
+httpVersion=2
 ```
 
 ##### database.properties
@@ -146,6 +147,7 @@ Example:
 ```
 postgresql.datasource.url=jdbc:postgresql://localhost:5432/jira
 postgresql.datasource.driver.class.name=org.postgresql.Driver
+postgresql.datasource.schema=
 postgresql.datasource.username=some_username
 postgresql.datasource.password=some_password
 ```
@@ -180,10 +182,11 @@ APIs documentation:
 This script is capable of migrating the Zephyr Squad entities, along with their attachments, to Zephyr Scale. The
 following entities are supported:
 
-- Test Cases and attachments
+- Test Cases and attachments 
 - Test Steps and attachments
-- Cycles
+- Test Cycles
 - Test Executions and attachments
+    NOTE: Execution issue Links are NOT migrated.
 
 ### What it doesn't do
 
@@ -199,6 +202,41 @@ following entities are supported:
 - **Automated attachments import**: The script generates a CSV file with the attachments mapping, but it does not import
   it
   automatically. It must be done manually through a third-party tool or command line.
+- **Migrate Custom Statuses**:If you need to migrate statuses more than “unexecuted”, ”pass”, “fail”, and “blocked”, you need to run a start-up script, that uses the private api before you migrate a project. Start-up.py is an example.
+
+
+## Common Errors and Resolutions
+
+### General Guidance
+You must parse the `app.log` file that gets generated to understand the failure, its cause, and when it occurred. The `app.log` contains logs of most actions, including successes and failures. Look specifically for the following messages:
+
+- **"Failed to execute the migration"**
+- **"Migration Completed"**
+
+### Error Messages and Resolutions
+
+#### Error: `"errorMessages":["Failed to execute the migration: null"]`
+- **Cause:** This error typically occurs at the beginning of the process due to misconfigured `app.properties` or `database.properties` files.
+- **Resolution:** Check the configuration files (`app.properties` and `database.properties`) against the examples provided above.
+
+---
+
+#### Error: `"errorMessages":["Failed to execute the migration: app.properties (No such file or directory)"]`
+- **Cause:** The `app-migration-zephyr-1.0.0.jar` file is not in the same directory as either `app.properties` or `database.properties`.
+- **Resolution:** Ensure that `app.properties`, `database.properties`, and the `.jar` file are all in the same directory.
+
+---
+
+#### Error: `"errorMessages":["The value <any value> was not found for field status on project <Jira Project Key>."]`
+- **Cause:** This indicates that a non-standard test execution status has not been migrated.
+- **Resolution:** Migrate the non-standard test execution statuses as described under **Migrate Custom Statuses**.
+
+---
+
+#### Error: `"errorMessages":["HTTP/1.1 header parser received no bytes"]`
+- **Cause:** This occurs when the `host` parameter in `app.properties` is incorrectly configured.
+- **Resolution:** Change the `host` parameter in `app.properties` to `http://localhost:8080` instead of host=`<https://your-jira-instance.atlassian.net>`
+
 
 ## Contributions
 
