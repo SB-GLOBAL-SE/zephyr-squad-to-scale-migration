@@ -185,7 +185,49 @@ following entities are supported:
 - Test Steps and attachments
 - Test Cycles
 - Test Executions and attachments 
-    - NOTE: Execution issue Links are NOT migrated.
+  
+### Data Mapping
+
+#### Test Case + Test Step Mappings
+
+| **Squad Test Case Field**| **Scale Test Case Field**       | **Description**                                                                                   |
+|--------------------------|---------------------------------|---------------------------------------------------------------------------------------------------|
+| Summary                  | Name                            | The Squad’s test case Summary field goes to the Name field inside the Scale test case.            |
+| Description              | Objective                       | The Squad’s test case Description field goes to the  Objective field in Scale’s test case.        |
+| Labels                   | Labels                          | The data from labels of Squad’s test case migrates to Scale’s labels.                             |
+| Reporter                 | Owner                           | The system migrates Squad's Reporter field data to Scale’s test case Owner field.                 |
+| Issue links              | Test case → coverage            | The system connects issue link to Jira issue inside the traceability section of the test case.    |
+| Test Step                | Step                            | The system migrates Squad Test Step, to Scale’s Step. Html values will migrate                    |
+| Test Data                | Test Data                       | The system migrates Squad Step Test Data, to Scales Test Data . Html values will migrate          |
+| Test Result              | Expected Result                 | The system migrates Squad Step Test Result, to Scale’s Expected Result. Html values will migrate. |
+| Status                   | Custom Field - squadStatus      | The system creates a custom field for test case in Scale SquadStatus value                        |
+| Priority                 | Custom Field - squadPriority    | The system creates a custom field for test case in Scale SquadPriority value                      |
+| Component                | Custom Field - components       | The system creates a custom field for test case in Scale components value                         |
+| Attachments              | Attachments                     | Attachments attached at the test cases, and test steps will migrate.                              |
+
+
+#### Test Execution Mappings
+
+| **Squad Test Execution Field**| **Scale Test Execution Field**| **Description**                                                                          |
+|-------------------------------|-------------------------------|------------------------------------------------------------------------------------------|
+| Execution Value               | Execution Value               | The system migrates the execution value from the Squad. Like “Pass”, “Failed”, “WIP”     |
+| Comment                       | Comment                       | Test Execution comments are migrated.                                                    |
+|                               | Executed by                   | Jira user that executed the migration script                                             |
+| Executed On                   | Custom Field - executedOn     | The system creates a custom field for test execution in Scale executedOn value           |
+| Assignee                      | Custom Field - assignedTo     | The system creates a custom field for test execution in Scale assignedTo value           |
+| Version                       | Custom Field - squadVersion   | The system creates a custom field for test execution in Scale squadVersion value         |
+| Test Cycle                    | Custom Field - squadCycleName | The system creates a custom field for test execution in Scale squadCycleName value       |
+| Folder                        | Custom Field - folderName     | The system creates a custom field for test execution in Scale folderName value           |
+| Attachments                   | Attachments                   | Attachments attached at the test execution will migrate.                               |
+ 
+#### Test Cycle Mappings
+
+| **Squad Test Cycle Field**| **Scale Test Cycle Field**| **Description**                                      |
+|---------------------------|---------------------------|------------------------------------------------------|
+| Test Cycle                | Name                      | The system migrates the test cycle name.             |
+| Test Cases                |Test Cases                 | The system migrates the test cases within that cycle.|
+
+
 
 ### What it doesn't do
 
