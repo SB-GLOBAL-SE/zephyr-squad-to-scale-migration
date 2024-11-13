@@ -243,7 +243,7 @@ following entities are supported:
 - **Automated attachments import**: The script generates a CSV file with the attachments mapping, but it does not import
   it
   automatically. It must be done manually through a third-party tool or command line.
-- **Migrate Custom Statuses**:If you need to migrate statuses more than “unexecuted”, ”pass”, “fail”, and “blocked”, you need to run a start-up script, that uses the private api before you migrate a project. Start-up.py is an example.
+- **Migrate Custom Statuses or Priorities**: If you use priorities, test case statuses, or test execution statuses beyond the default values, then you must migrate those prior to running the utility. Start-up.py is an example for test execution statuses.
 
 
 ## Common Errors and Resolutions
