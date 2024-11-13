@@ -185,8 +185,8 @@ following entities are supported:
 - Test Cases and attachments 
 - Test Steps and attachments
 - Test Cycles
-- Test Executions and attachments
-    NOTE: Execution issue Links are NOT migrated.
+- Test Executions and attachments 
+    - NOTE: Execution issue Links are NOT migrated.
 
 ### What it doesn't do
 
@@ -219,19 +219,15 @@ You must parse the `app.log` file that gets generated to understand the failure,
 - **Cause:** This error typically occurs at the beginning of the process due to misconfigured `app.properties` or `database.properties` files.
 - **Resolution:** Check the configuration files (`app.properties` and `database.properties`) against the examples provided above.
 
----
 
 #### Error: `"errorMessages":["Failed to execute the migration: app.properties (No such file or directory)"]`
 - **Cause:** The `app-migration-zephyr-1.0.0.jar` file is not in the same directory as either `app.properties` or `database.properties`.
 - **Resolution:** Ensure that `app.properties`, `database.properties`, and the `.jar` file are all in the same directory.
 
----
 
 #### Error: `"errorMessages":["The value <any value> was not found for field status on project <Jira Project Key>."]`
 - **Cause:** This indicates that a non-standard test execution status has not been migrated.
 - **Resolution:** Migrate the non-standard test execution statuses as described under **Migrate Custom Statuses**.
-
----
 
 #### Error: `"errorMessages":["HTTP/1.1 header parser received no bytes"]`
 - **Cause:** This occurs when the `host` parameter in `app.properties` is incorrectly configured.
