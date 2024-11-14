@@ -12,17 +12,13 @@ Note: This script does not migrate all data from Squad to Scale. It is purely a 
 
 ## Usage
 
-This script can be run in two different modes:
+This script can be run in the following mode:
 
 1. **Single Project Mode**: where you define the project key and the script will migrate all entities from that project
     ```bash
     java -jar zephyr-squad-to-scale-migration.jar <username> <password> <projectKey>
     ```
-2. **All projects Mode**: where the script will migrate all entities from all projects that hold Zephyr Squad data in
-   the instance
-    ```bash
-    java -jar zephyr-squad-to-scale-migration.jar <username> <password>
-    ``` 
+
 
 When the script finishes running, it will have migrated Squad Entities to Scale, copied all Attachments from Zephyr
 Squad Entities to Zephyr Scale and generated a CSV file with the
