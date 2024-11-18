@@ -8,7 +8,8 @@ It uses Jira, Squad and Scale APIs to read and insert entities, executes some qu
 to fetch complementary data to help the migration and generates a CSV file with the mapping of the attachments to be
 latter inserted.
 
-Note: This script does not migrate all data from Squad to Scale. It is purely a framework to help users/partners get started. 
+## Disclaimer: Framework Status
+The Zephyr Squad to Scale DC Migration Utility is provided as a framework to assist in the migration process between Zephyr Squad and Zephyr Scale. It is not a fully vetted, production-ready tool. The utility is designed to provide baseline functionality, but significant effort may be required to adapt it to your specific infrastructure and requirements.
 
 ## Usage
 
