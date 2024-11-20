@@ -1,4 +1,4 @@
-# Zephyr Squad to Scale Migration script
+# Zephyr Squad to Scale Migration Framework
 
 [![Atlassian license](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat-square)](LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
 
