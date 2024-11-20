@@ -156,7 +156,7 @@ and `database.properties` (already configured) to the Jira host.
 
 ## Project build
 
-The project is built using Maven and to run unit tests and build the `jar` you can run the following command:
+The project is built using Maven and to run unit tests and build the `jar`. You can create the most up to date `jar` by the following command:
 
 ```bash
 mvn clean package
