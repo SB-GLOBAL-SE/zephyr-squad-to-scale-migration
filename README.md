@@ -241,7 +241,7 @@ following entities are supported:
   it
   automatically. It must be done manually through a third-party tool or command line.
 - **Migrate Custom Statuses or Priorities**: If you use priorities, test case statuses, or test execution statuses beyond the default values, then you must migrate those prior to running the utility. Start-up.py is an example for test execution statuses.
-**Migrate Test Execution Step Information**: The framework does NOT migrate test execution step statuses, execution step defects, execution step attachments, and execution step comments.
+- **Migrate Test Execution Step Information**: The framework does NOT migrate test execution step statuses, execution step defects, execution step attachments, and execution step comments.
 
 
 ## Common Errors and Resolutions
