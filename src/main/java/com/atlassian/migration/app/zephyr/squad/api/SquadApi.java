@@ -7,10 +7,15 @@ import com.atlassian.migration.app.zephyr.scale.model.GetAllProjectsResponse;
 import com.atlassian.migration.app.zephyr.squad.model.*;
 
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SquadApi extends BaseApi {
+
+    private static final Logger logger = LoggerFactory.getLogger(SquadApi.class); // Add the logger here
+
 
     public static final String FETCH_SQUAD_TEST_STEP_ENDPOINT = "/rest/zapi/latest/teststep/%s";
     public static final String FETCH_SQUAD_EXECUTION_ENDPOINT = "/rest/zapi/latest/execution?issueId=%s";
@@ -19,15 +24,27 @@ public class SquadApi extends BaseApi {
     public static final String ENTITY_TYPE_TEST_EXECUTION = "execution";
     public static final String ENTITY_TYPE_TEST_STEP = "teststep";
 
-    public static final Map<Integer, SquadExecutionTypeResponse> EXECUTION_TYPES = Stream.of(
-            new SquadExecutionTypeResponse(-1, "Unexecuted"),
+   /*  public static final Map<Integer, SquadExecutionTypeResponse> EXECUTION_TYPES = Stream.of(
+            new SquadExecutionTypeResponse(-1, "Not Started"),
             new SquadExecutionTypeResponse(1, "Pass"),
             new SquadExecutionTypeResponse(2, "Fail"),
             new SquadExecutionTypeResponse(3, "WIP"),
             new SquadExecutionTypeResponse(4, "Blocked"),
             new SquadExecutionTypeResponse(5, "Descoped"),
-            new SquadExecutionTypeResponse(6, "Retested"),
-            new SquadExecutionTypeResponse(7, "On Hold")
+            new SquadExecutionTypeResponse(6, "Deferred"),
+            new SquadExecutionTypeResponse(7, "Retest")
+    ).collect(Collectors.toMap(SquadExecutionTypeResponse::id, e -> e));
+    */
+    public static final Map<Integer, SquadExecutionTypeResponse> EXECUTION_TYPES = Stream.of(
+            new SquadExecutionTypeResponse(-1, "Not Executed"), 
+            new SquadExecutionTypeResponse(1, "Pass"),
+            new SquadExecutionTypeResponse(2, "Fail"),
+            new SquadExecutionTypeResponse(3, "WIP"),
+            new SquadExecutionTypeResponse(4, "Blocked"),
+            new SquadExecutionTypeResponse(5, "Not Started"), 
+            new SquadExecutionTypeResponse(6, "Descoped"),  
+            new SquadExecutionTypeResponse(7, "Deferred"),
+            new SquadExecutionTypeResponse(8, "Retest")
     ).collect(Collectors.toMap(SquadExecutionTypeResponse::id, e -> e));
 
     public SquadApi(ApiConfiguration config) {
@@ -50,8 +67,33 @@ public class SquadApi extends BaseApi {
 
         var response = sendHttpGet(getUri(urlPath(FETCH_SQUAD_EXECUTION_ENDPOINT, issueId)));
         var data = gson.fromJson(response, FetchSquadExecutionResponse.class);
-
+        
         var executions = data.executions().stream()
+        .map(e -> {
+            SquadExecutionTypeResponse executionType = EXECUTION_TYPES.get(e.executionStatus());
+            
+            // Handle missing or null execution types
+            if (executionType == null) {
+                executionType = new SquadExecutionTypeResponse(-1, "Not Executed"); // Default to "Not Executed"
+                logger.info("Missing or null execution data, setting default value of 'Not Executed'");
+            }
+    
+            return new SquadExecutionItemParsedResponse(
+                e.id(),
+                executionType,
+                e.createdBy(),
+                e.createdByUserName(),
+                e.versionName(),
+                e.htmlComment(),
+                e.executedOn(),
+                e.assignedTo(),
+                e.assignedToDisplay(),
+                e.assignedToUserName(),
+                e.cycleName(),
+                e.folderName());
+        }).toList();
+    
+/*        var executions = data.executions().stream()
                 .map(e -> new SquadExecutionItemParsedResponse(
                         e.id(),
                         EXECUTION_TYPES.get(e.executionStatus()),
@@ -65,7 +107,7 @@ public class SquadApi extends BaseApi {
                         e.assignedToUserName(),
                         e.cycleName(),
                         e.folderName())).toList();
-
+*/
         return new FetchSquadExecutionParsedResponse(
                 data.status(),
                 data.issueId(),

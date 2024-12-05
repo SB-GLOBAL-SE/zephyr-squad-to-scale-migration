@@ -90,6 +90,8 @@ public class SquadToScaleMigrator {
 
             logger.info("Total issues: " + total);
 
+            logger.info("Project Key: " + projectKey);
+
             logger.info("Enabling project in Scale...");
             scaleApi.enableProject(new EnableProjectPayload(projectKey, true));
 
