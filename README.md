@@ -215,7 +215,7 @@ following entities are supported:
 | Version                       | Custom Field - squadVersion   | The system creates a custom field for test execution in Scale squadVersion value         |
 | Test Cycle                    | Custom Field - squadCycleName | The system creates a custom field for test execution in Scale squadCycleName value       |
 | Folder                        | Custom Field - folderName     | The system creates a custom field for test execution in Scale folderName value           |
-| Attachments                   | Attachments                   | Attachments attached at the test execution will migrate.                               |
+| Attachments                   | Attachments                   | Attachments attached at the test execution entity will migrate. NOT test step executions |
  
 #### Test Cycle Mappings
 
