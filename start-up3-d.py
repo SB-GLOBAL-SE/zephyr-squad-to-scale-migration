@@ -24,8 +24,6 @@ project_keys = sys.argv[3:]
 base_url = instance_url
 mc_auth = HTTPBasicAuth(username, password)
 
-# List of project keys
-#project_keys = ["ZULU", "KILO", "NP"]  # Replace with actual project keys
 
 for project_key in project_keys:
     print(f"Processing project key: {project_key}")
