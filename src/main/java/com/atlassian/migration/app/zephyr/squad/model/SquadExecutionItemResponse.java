@@ -3,6 +3,7 @@ package com.atlassian.migration.app.zephyr.squad.model;
 public record SquadExecutionItemResponse(
         String id,
         int executionStatus,
+        String createdOn,
         Object createdBy,
         String createdByUserName,
         String versionName,

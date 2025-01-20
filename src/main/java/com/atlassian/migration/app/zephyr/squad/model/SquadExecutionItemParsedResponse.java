@@ -3,6 +3,7 @@ package com.atlassian.migration.app.zephyr.squad.model;
 public record SquadExecutionItemParsedResponse(
         String id,
         SquadExecutionTypeResponse status,
+        String createdOn,
         Object createdBy,
         String createdByUserName,
         String versionName,
@@ -21,6 +22,7 @@ public record SquadExecutionItemParsedResponse(
     public SquadExecutionItemParsedResponse(
             String id,
             SquadExecutionTypeResponse status,
+            String createdOn,
             Object createdBy,
             String createdByUserName,
             String versionName,
@@ -33,6 +35,7 @@ public record SquadExecutionItemParsedResponse(
             String folderName) {
         this(id,
                 status,
+                createdOn,
                 createdBy,
                 createdByUserName,
                 versionName,

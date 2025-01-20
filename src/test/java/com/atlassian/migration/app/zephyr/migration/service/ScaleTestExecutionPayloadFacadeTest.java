@@ -41,6 +41,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var squadExecutionPayloadMock = new SquadExecutionItemParsedResponse(
                 "2",
                 new SquadExecutionTypeResponse(1, "Pass"),
+                "createdOn",
                 "author",
                 "author",
                 "version",
@@ -91,6 +92,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var squadExecutionPayloadWipMock = new SquadExecutionItemParsedResponse(
                 "2",
                 new SquadExecutionTypeResponse(1, "wip"),
+                "createdOn",
                 "author",
                 "author",
                 "version",
@@ -105,6 +107,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var squadExecutionPayloadUnexecutedMock = new SquadExecutionItemParsedResponse(
                 "2",
                 new SquadExecutionTypeResponse(1, "unexecuted"),
+                "createdOn",
                 "author",
                 "author",
                 "version",
@@ -177,6 +180,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var squadExecutionPayloadMock = new SquadExecutionItemParsedResponse(
                 "2",
                 new SquadExecutionTypeResponse(1, "Pass"),
+                "createdOn",
                 "author",
                 "author",
                 "unscheduled",
@@ -227,6 +231,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var squadExecutionPayloadMock = new SquadExecutionItemParsedResponse(
                 "2",
                 new SquadExecutionTypeResponse(1, "Pass"),
+                "createdOn",
                 "author",
                 "author",
                 "version",
@@ -274,6 +279,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var squadExecutionPayloadMock = new SquadExecutionItemParsedResponse(
                 "2",
                 new SquadExecutionTypeResponse(1, "Pass"),
+                "createdOn",
                 "author",
                 "author",
                 "version",
@@ -319,6 +325,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var squadExecutionPayloadMock = new SquadExecutionItemParsedResponse(
                 "2",
                 new SquadExecutionTypeResponse(1, "Pass"),
+                "createdOn",
                 "author",
                 "author",
                 "version",
@@ -363,6 +370,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var squadExecutionPayloadMock = new SquadExecutionItemParsedResponse(
                 "2",
                 new SquadExecutionTypeResponse(1, "Pass"),
+                "createdOn",
                 "author",
                 "author",
                 "version",

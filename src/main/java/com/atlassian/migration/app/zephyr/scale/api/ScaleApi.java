@@ -5,16 +5,15 @@ import com.atlassian.migration.app.zephyr.common.ApiException;
 import com.atlassian.migration.app.zephyr.common.BaseApi;
 import com.atlassian.migration.app.zephyr.common.ZephyrApiException;
 import com.atlassian.migration.app.zephyr.scale.model.*;
+import com.atlassian.migration.app.zephyr.squad.model.FetchSquadStatusResponse;
+import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionStatusResponse;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ScaleApi extends BaseApi {
 
@@ -27,7 +26,8 @@ public class ScaleApi extends BaseApi {
     public static final String SCALE_TEST_STEP_ENDPOINT = "/rest/atm/1.0/testcase/%s";
     public static final String CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT = "/rest/atm/1.0/testrun";
     public static final String CREATE_SCALE_TEST_RESULTS_ENDPOINT = "/rest/atm/1.0/testrun/%s/testresults";
-
+    public static final String FETCH_SCALE_RESULTS_STATUSES = "/rest/tests/1.0/testresultstatus?projectId=%s";
+    public static final String CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT = "/rest/tests/1.0/testresultstatus";
     public static final String CUSTOM_FIELD_DUPLICATED_EXPECTED_MESSAGE = "Custom field name is duplicated";
 
     public ScaleApi(ApiConfiguration config) {
@@ -72,6 +72,36 @@ public class ScaleApi extends BaseApi {
             ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TEST_STEP, key), e);
         }
         return new ScaleGETStepsPayload("", "", new SquadGETStepItemPayload());
+    }
+
+    public FetchScaleResultsStatusesResponse fetchTestResultsStatuses(String projectId) throws ZephyrApiException {
+        try {
+            var response = sendHttpGet(getUri(urlPath(FETCH_SCALE_RESULTS_STATUSES, projectId)));
+            List<ScaleResultsStatus> listofScaleResultsStatus = gson.fromJson(response, new TypeToken<List<ScaleResultsStatus>>(){}.getType());
+            return new FetchScaleResultsStatusesResponse(listofScaleResultsStatus);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTRESULTS_STATUS, projectId), e);
+        }
+        return new FetchScaleResultsStatusesResponse(new ArrayList<>());
+    }
+
+    public String createScaleTestResultsStatus(String projectId, String statusName, String statusDescription, String statusColor) throws ZephyrApiException{
+        Map<String, Object> params = new HashMap<>();
+        params.put("projectId", Integer.parseInt(projectId));
+        params.put("name", statusName);
+        params.put("description", statusDescription);
+        params.put("color", statusColor);
+
+        String response = "";
+        try {
+            response = sendHttpPost(CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT, params);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_RESULTS_STATUS, e);
+
+        }
+
+        Map<String, Object> result = gson.fromJson(response, Map.class);
+        return result.get("id").toString();
     }
 
     public String createMigrationTestCycle(String projectKey, String cycleName, String cycleVersion) throws ZephyrApiException {
@@ -175,8 +205,14 @@ public class ScaleApi extends BaseApi {
         public static final String ERROR_FETCHING_TEST_STEP = "Error while fetching Test Steps at " +
                 SCALE_TEST_STEP_ENDPOINT;
 
+        public static final String ERROR_FETCHING_TESTRESULTS_STATUS = "Error while fetching Test results status at " +
+                FETCH_SCALE_RESULTS_STATUSES;
+
         public static final String ERROR_CREATE_TEST_CYCLE = "Error while creating Test Cycle at "
                 + CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT;
+
+        public static final String ERROR_CREATE_TEST_RESULTS_STATUS = "Error while creating Test results status at "
+                + CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT;
 
         public static final String ERROR_CREATE_TEST_RESULTS = "Error while creating Test Results at "
                 + CREATE_SCALE_TEST_RESULTS_ENDPOINT;

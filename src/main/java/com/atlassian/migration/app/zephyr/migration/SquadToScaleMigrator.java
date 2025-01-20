@@ -15,6 +15,8 @@ import com.atlassian.migration.app.zephyr.migration.service.ScaleTestExecutionPa
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
 import com.atlassian.migration.app.zephyr.scale.model.*;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
+import com.atlassian.migration.app.zephyr.squad.model.FetchSquadStatusResponse;
+import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionStatusResponse;
 import com.atlassian.migration.app.zephyr.squad.model.SquadTestStepResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class SquadToScaleMigrator {
 
     private static final Logger logger = LoggerFactory.getLogger(SquadToScaleMigrator.class);
+    private static final List<String> IGNORABLE_SQUAD_STATUSES = List.of("PASS", "FAIL", "WIP", "BLOCKED", "UNEXECUTED");
 
     private final MigrationConfiguration config;
     private final JiraApi jiraApi;
@@ -95,8 +98,8 @@ public class SquadToScaleMigrator {
             logger.info("Creating migration Custom Fields...");
             createMigrationCustomFields(projectKey);
 
-            logger.info("Creating project Custom Fields...");
-            createProjectCustomFields(projectKey);
+            logger.info("Creating migration Scale statuses Fields...");
+            createMigrationTestResultsStatuses(projectKey);
 
             var startAt = 0;
             long startTimeMillis = System.currentTimeMillis();
@@ -139,6 +142,56 @@ public class SquadToScaleMigrator {
         }
     }
 
+    private void createMigrationTestResultsStatuses(String projectKey) {
+        try {
+            GetProjectResponse projectResponse = jiraApi.getProject(projectKey);
+            FetchSquadStatusResponse squadExecutionStatuses = squadApi.fetchLatestTestExecutionStatuses();
+            FetchSquadStatusResponse squadStepResultsStatuses = squadApi.fetchLatestTestStepExecutionStatuses();
+
+            var tobeCreatedStatuses = new LinkedHashMap<String, SquadExecutionStatusResponse>();
+            var scaleTestResultsStatuses = new LinkedHashMap<String, ScaleResultsStatus>();
+
+            FetchScaleResultsStatusesResponse fetchscaleTestResultsStatuses = scaleApi.fetchTestResultsStatuses(projectResponse.id());
+            if(fetchscaleTestResultsStatuses != null && fetchscaleTestResultsStatuses.data() != null){
+                fetchscaleTestResultsStatuses.data().forEach( scaleResultsStatus -> {
+                    scaleTestResultsStatuses.put(scaleResultsStatus.name(), scaleResultsStatus);
+                });
+            }
+            // checking for SQUAD Execution statuses which are not part of scale test results statuses
+            if(squadExecutionStatuses != null && squadExecutionStatuses.data() != null){
+                squadApi.updateExecutionStatusTypes(squadExecutionStatuses.data());
+                squadExecutionStatuses.data().forEach( executionStatus -> {
+                    String statusName = executionStatus.name();
+                    if(!IGNORABLE_SQUAD_STATUSES.contains(statusName) && !scaleTestResultsStatuses.containsKey(statusName)) {
+                        tobeCreatedStatuses.put(statusName, executionStatus);
+                    }
+                });
+            }
+
+            // checking for SQAUD Step Execution statuses which are not part of scale test results statuses
+            if(squadStepResultsStatuses != null && squadStepResultsStatuses.data() != null){
+                squadStepResultsStatuses.data().forEach( executionStatus -> {
+                    String statusName = executionStatus.name();
+                    if(!IGNORABLE_SQUAD_STATUSES.contains(statusName) && !scaleTestResultsStatuses.containsKey(statusName)) {
+                        tobeCreatedStatuses.put(statusName, executionStatus);
+                    }
+                });
+            }
+
+            for (var squadStatustoCreate : tobeCreatedStatuses.entrySet()) {
+                scaleApi.createScaleTestResultsStatus(projectResponse.id(),
+                        squadStatustoCreate.getValue().name(),
+                        squadStatustoCreate.getValue().description(),
+                        squadStatustoCreate.getValue().color()
+                        );
+                logger.info(String.format("Test results status with name '%s' has been created", squadStatustoCreate.getKey()));
+            }
+        } catch (IOException exception) {
+            logger.error("Failed to create migration test results statuses " + exception.getMessage(),
+                    exception);
+            throw new RuntimeException(exception);
+        }
+    }
 
     private void createProjectCustomFields(String projectKey){
         try{
@@ -214,6 +267,10 @@ public class SquadToScaleMigrator {
             for (var issue : issues) {
                 var scaleTestCaseKey = createTestCaseForIssue(issue, projectKey);
                 map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key()), scaleTestCaseKey);
+//                String creatorKey = (issue.fields().creator != null && issue.fields().creator.key() != null)
+//                        ? issue.fields().creator.key()
+//                        : null;
+//                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key(), creatorKey, issue.fields().created, null, issue.fields().updated), scaleTestCaseKey);
             }
             return map;
         } catch (IOException exception) {
@@ -331,8 +388,8 @@ public class SquadToScaleMigrator {
 
                 var scaleTestExecutionCreatedPayload = scaleApi.createTestExecution(scaleCycleKey,
                         testExecutionPayload);
-
                 testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id()),
+//                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id(), execution.createdBy(), execution.createdOn(), null, null),
                         scaleTestExecutionCreatedPayload.id());
 
             }
