@@ -133,11 +133,12 @@ class SquadToScaleMigratorTest {
 
             var totalIssuesMock = 10;
             var interactionsExpected = totalIssuesMock / migConfigSpy.pageSteps();
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null);
 
             when(jiraApiMock.fetchTotalIssuesByProjectName(any())).thenReturn(totalIssuesMock);
 
             when(jiraApiMock.fetchIssuesOrderedByCreatedDate(any(), any(), any())).thenReturn(Collections.emptyList());
-
+            when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
             migratorSpy.runMigration("PROJECT-1");
 
             //We are using a public method to count interactions. Each processPage calls attachments export once
@@ -165,10 +166,13 @@ class SquadToScaleMigratorTest {
 
         @Test
         void shouldCreateOneTestCasePerIssue() throws IOException, ExecutionException, InterruptedException {
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null);
 
             when(squadApiMock.fetchLatestTestStepByTestCaseId(any())).thenReturn(new FetchSquadTestStepResponse(Collections.emptyList()));
 
             when(squadApiMock.fetchLatestExecutionByIssueId(any())).thenReturn(emptyExecutionsMock);
+
+            when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
 
             migratorSpy.runMigration("PROJECT");
 
@@ -186,11 +190,13 @@ class SquadToScaleMigratorTest {
             );
 
             var fetchSquadTestStepResponseMock = new FetchSquadTestStepResponse(stepBeanCollectionMock);
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null);
 
             when(squadApiMock.fetchLatestTestStepByTestCaseId(any())).thenReturn(fetchSquadTestStepResponseMock);
 
             when(squadApiMock.fetchLatestExecutionByIssueId(any())).thenReturn(emptyExecutionsMock);
 
+            when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
             migratorSpy.runMigration("PROJECT");
 
             verify(scaleApiMock, times(issuesMock.size())).updateTestStep(any(), any());
@@ -208,15 +214,18 @@ class SquadToScaleMigratorTest {
                     new SquadExecutionItemParsedResponse("1",
                             statusMock, "createdOn",null, null,
                             "versionName", "comment", "executedOn",
-                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-1", "folder"),
+                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-1", "folder",
+                            List.of(new SquadExecutionDefectResponse("issueKey"))),
                     new SquadExecutionItemParsedResponse("2",
                             statusMock, "createdOn", null, null,
                             "versionName", "comment", "executedOn",
-                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-2", "folder"),
+                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-2", "folder",
+                            List.of(new SquadExecutionDefectResponse("issueKey"))),
                     new SquadExecutionItemParsedResponse("3",
                             statusMock, "createdOn", null, null,
                             "versionName", "comment", "executedOn",
-                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-3", "folder")
+                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-3", "folder",
+                            List.of(new SquadExecutionDefectResponse("issueKey")))
             );
 
             var fetchSquadExecutionParsedResponseMock = new FetchSquadExecutionParsedResponse(Collections.emptyMap(),
@@ -226,10 +235,11 @@ class SquadToScaleMigratorTest {
                     false,
                     false,
                     executionsMock);
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null);
 
             when(squadApiMock.fetchLatestExecutionByIssueId(any())).thenReturn(fetchSquadExecutionParsedResponseMock);
             when(scaleApiMock.createTestExecution(any(), any())).thenReturn(new ScaleTestResultCreatedPayload("1"));
-
+            when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
             migratorSpy.runMigration("PROJECT");
 
             //each time a TestCase is processed, the executionsMock is returned, so we process executionsMock times the number of Test Cases

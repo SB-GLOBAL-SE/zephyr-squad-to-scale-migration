@@ -4,6 +4,7 @@ import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.AssignableUserResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionCreationPayload;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationExecutionCustomFieldPayload;
+import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionDefectResponse;
 import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionItemParsedResponse;
 import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionTypeResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,7 +52,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "assignee",
                 "assignee",
                 "cycle",
-                "folder");
+                "folder",
+                List.of(new SquadExecutionDefectResponse("issueKey")));
 
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
@@ -59,6 +61,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
+                List.of("issueKey"),
                 new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "assignee",
@@ -102,7 +105,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "assignee",
                 "assignee",
                 "cycle",
-                "folder");
+                "folder",
+                List.of(new SquadExecutionDefectResponse("issueKey")));
 
         var squadExecutionPayloadUnexecutedMock = new SquadExecutionItemParsedResponse(
                 "2",
@@ -117,7 +121,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "assignee",
                 "assignee",
                 "cycle",
-                "folder");
+                "folder",
+                List.of(new SquadExecutionDefectResponse("issueKey")));
 
         var expectedScaleExecutionPayloadWip = new ScaleExecutionCreationPayload(
                 "In Progress",
@@ -125,6 +130,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
+                List.of("issueKey"),
                 new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "assignee",
@@ -140,6 +146,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
+                List.of("issueKey"),
                 new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "assignee",
@@ -190,7 +197,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "assignee",
                 "assignee",
                 "cycle",
-                "folder");
+                "folder",
+                List.of(new SquadExecutionDefectResponse("issueKey")));
 
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
@@ -198,6 +206,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 null,
+                List.of("issueKey"),
                 new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "assignee",
@@ -241,7 +250,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "",
                 "unassignable",
                 "cycle",
-                "folder");
+                "folder",
+                List.of(new SquadExecutionDefectResponse("issueKey")));
 
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
@@ -249,6 +259,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
+                List.of("issueKey"),
                 new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "None",
@@ -289,7 +300,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "assignee (Inactive)",
                 "unassignable",
                 "cycle",
-                "folder");
+                "folder",
+                List.of(new SquadExecutionDefectResponse("issueKey")));
 
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
@@ -297,6 +309,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "author",
                 "html_content",
                 "version",
+                List.of("issueKey"),
                 new ScaleMigrationExecutionCustomFieldPayload(
                         "executed",
                         "None",
@@ -335,7 +348,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "assignee",
                 "assignee",
                 "cycle",
-                "folder");
+                "folder",
+                List.of(new SquadExecutionDefectResponse("issueKey")));
 
         var createdByUserMock = new AssignableUserResponse(
                 "key", "author", "email", "author"
@@ -380,7 +394,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "assignee",
                 "assignee",
                 "cycle",
-                "folder");
+                "folder",
+                List.of(new SquadExecutionDefectResponse("issueKey")));
 
         var createdByUserMock = new AssignableUserResponse(
                 "key", "author", "email", "author"
