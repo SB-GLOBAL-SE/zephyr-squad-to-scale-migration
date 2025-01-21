@@ -1,5 +1,7 @@
 package com.atlassian.migration.app.zephyr.squad.model;
 
+import java.util.List;
+
 public record SquadExecutionItemParsedResponse(
         String id,
         SquadExecutionTypeResponse status,
@@ -16,7 +18,8 @@ public record SquadExecutionItemParsedResponse(
         String assignedToUserName,
         Object executedOnOrStr,
         Object assignedToOrStr,
-        String folderNameOrStr
+        String folderNameOrStr,
+        List<SquadExecutionDefectResponse> defects
 ) {
 
     public SquadExecutionItemParsedResponse(
@@ -32,7 +35,8 @@ public record SquadExecutionItemParsedResponse(
             String assignedToDisplay,
             String assignedToUserName,
             String cycleName,
-            String folderName) {
+            String folderName,
+            List<SquadExecutionDefectResponse> defects) {
         this(id,
                 status,
                 createdOn,
@@ -49,6 +53,7 @@ public record SquadExecutionItemParsedResponse(
                 executedOn == null ? "None" : executedOn,
                 assignedToUserName == null || assignedToDisplay.toLowerCase().contains("inactive")
                         ? "None" : assignedToUserName,
-                folderName == null ? "None" : folderName);
+                folderName == null ? "None" : folderName,
+                defects);
     }
 }

@@ -78,7 +78,8 @@ public class SquadApi extends BaseApi {
                         e.assignedToDisplay(),
                         e.assignedToUserName(),
                         e.cycleName(),
-                        e.folderName())).toList();
+                        e.folderName(),
+                        e.defects())).toList();
 
         return new FetchSquadExecutionParsedResponse(
                 data.status(),

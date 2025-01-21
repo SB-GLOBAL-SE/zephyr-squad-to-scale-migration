@@ -8,9 +8,7 @@ import com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationExecutionCus
 import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionItemParsedResponse;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ScaleTestExecutionPayloadFacade implements Resettable {
 
@@ -50,12 +48,21 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
         var executedByValidation = validateAssignedUser(executionData.createdByUserName(), projectKey);
         var assignedToValidation = validateAssignedUser(executionData.assignedToOrStr().toString(), projectKey);
 
+        List<String> defects = new ArrayList<String>();
+        if(executionData.defects() != null && executionData.defects().size() > 0){
+            executionData.defects().forEach( defect -> {
+                if(defect.key() != null && !defect.key().isEmpty()) {
+                    defects.add(defect.key());
+                }
+            });
+        }
         return new ScaleExecutionCreationPayload(
                 translateSquadToScaleExecStatus(executionData.status().name()),
                 scaleTestCaseKey,
                 executedByValidation ? executionData.createdBy() : null,
                 executionData.htmlComment(),
                 translateSquadToScaleVersion(executionData.versionName()),
+                defects,
                 new ScaleMigrationExecutionCustomFieldPayload(
                         executionData.executedOnOrStr(),
                         assignedToValidation ? executionData.assignedTo() : DEFAULT_NONE_USER,

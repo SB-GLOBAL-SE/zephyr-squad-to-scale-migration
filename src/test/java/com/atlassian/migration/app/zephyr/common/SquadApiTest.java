@@ -158,7 +158,7 @@ public class SquadApiTest {
     class WhenFetchingTestExecution {
 
         private final Map<String, SquadExecutionStatusResponse> statusMap = Map.of(
-                "1", new SquadExecutionStatusResponse("1", "Pass", "description")
+                "1", new SquadExecutionStatusResponse("1", "Pass", "description", "color")
         );
 
         private Gson gson;
@@ -193,6 +193,7 @@ public class SquadApiTest {
                     new SquadExecutionItemResponse(
                             "2",
                             1,
+                            "createdOn",
                             "author",
                             "author",
                             "version",
@@ -202,7 +203,8 @@ public class SquadApiTest {
                             "executed",
                             "assignee",
                             "assignee",
-                            "assignee"));
+                            "assignee",
+                            List.of(new SquadExecutionDefectResponse("issueKey"))));
 
             var fetchSquadExecutionResponseMock = new FetchSquadExecutionResponse(statusMap, "10100",
                     1, 1, false, false,
@@ -219,6 +221,7 @@ public class SquadApiTest {
                             new SquadExecutionItemParsedResponse(
                                     "2",
                                     new SquadExecutionTypeResponse(1, "Pass"),
+                                    "createdOn",
                                     "author",
                                     "author",
                                     "version",
@@ -228,7 +231,8 @@ public class SquadApiTest {
                                     "assignee",
                                     "assignee",
                                     "cycle",
-                                    "folder")
+                                    "folder",
+                                    List.of(new SquadExecutionDefectResponse("issueKey")))
                     )
             );
 
@@ -244,6 +248,7 @@ public class SquadApiTest {
                     new SquadExecutionItemResponse(
                             "1",
                             1,
+                            "createdOn",
                             "author",
                             "author",
                             "version",
@@ -253,7 +258,8 @@ public class SquadApiTest {
                             null,
                             null,
                             null,
-                            null));
+                            null,
+                            List.of(new SquadExecutionDefectResponse("issueKey"))));
 
             var fetchSquadExecutionResponseMock = new FetchSquadExecutionResponse(statusMap, "10100",
                     1, 1, false, false,
@@ -271,6 +277,7 @@ public class SquadApiTest {
                             new SquadExecutionItemParsedResponse(
                                     "1",
                                     new SquadExecutionTypeResponse(1, "Pass"),
+                                    "createdOn",
                                     "author",
                                     "author",
                                     "version",
@@ -280,7 +287,8 @@ public class SquadApiTest {
                                     null,
                                     null,
                                     "cycle",
-                                    null)
+                                    null,
+                                    List.of(new SquadExecutionDefectResponse("issueKey")))
                     )
             );
 
