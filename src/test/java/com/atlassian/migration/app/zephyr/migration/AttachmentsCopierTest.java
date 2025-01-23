@@ -50,8 +50,18 @@ class AttachmentsCopierTest {
             "1",
             new SquadOriginEntity("1", ""));
 
+    private final AttachmentAssociationData executionStepAttachMappedMock = AttachmentAssociationData.createAttachmentAssociationDataFromExecutionStep(
+            "testStepAttach",
+            "4",
+            "mime",
+            "123456",
+            "author",
+            "10100",
+            "1",
+            new SquadOriginEntity("1", ""));
+
     private final List<AttachmentAssociationData> attachmentsMappedMock = List.of(
-            testCaseAttachMappedMock, testStepAttachMappedMock, testExecAttachMappedMock);
+            testCaseAttachMappedMock, testStepAttachMappedMock, testExecAttachMappedMock, executionStepAttachMappedMock);
 
 
     private final String mockProjectKey = "PROJECT";
@@ -118,13 +128,28 @@ class AttachmentsCopierTest {
     }
 
     @Test
+    void shouldBuildOriginPathForExecutionStep() throws IOException {
+        var expectedOriginPath = BASE_DIR + "PROJECT/teststepresult/1/4";
+
+        ArgumentCaptor<String> captureBaseDir = ArgumentCaptor.forClass(String.class);
+
+        doReturn(true).when(attachmentsCopierSpy).isPathToAttachment(any());
+
+        attachmentsCopierSpy.copyAttachments(List.of(executionStepAttachMappedMock), mockProjectKey, mockProjectHistoricalKeys);
+
+        verify(attachmentsCopierSpy).copyFile(captureBaseDir.capture(), any());
+
+        assertEquals(captureBaseDir.getValue(), expectedOriginPath);
+    }
+
+    @Test
     void shouldCallCpFileOncePerAttachmentMapped() throws IOException {
 
         doReturn(true).when(attachmentsCopierSpy).isPathToAttachment(any());
 
         attachmentsCopierSpy.copyAttachments(attachmentsMappedMock, mockProjectKey, mockProjectHistoricalKeys);
 
-        verify(attachmentsCopierSpy, times(3)).copyFile(any(), any());
+        verify(attachmentsCopierSpy, times(4)).copyFile(any(), any());
     }
 
     @Test

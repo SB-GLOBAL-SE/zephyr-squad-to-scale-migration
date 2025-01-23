@@ -22,7 +22,8 @@ public class SquadApi extends BaseApi {
     public static final String FETCH_SQUAD_EXECUTION_STATUSES = "/rest/zapi/latest/util/testExecutionStatus";
     public static final String FETCH_SQUAD_STEP_RESULTS_STATUSES = "/rest/zapi/latest/util/teststepExecutionStatus";
     public static final String ENTITY_TYPE_TEST_EXECUTION = "execution";
-    public static final String ENTITY_TYPE_TEST_STEP = "teststep";
+    public static final String ENTITY_TYPE_TEST_STEP_RESULT = "TESTSTEPRESULT";
+    public static final String ENTITY_TYPE_TEST_STEP = "TESTSTEP";
 
 
     public static final Map<Integer, SquadExecutionTypeResponse> EXECUTION_TYPES = Stream.of(
@@ -123,6 +124,10 @@ public class SquadApi extends BaseApi {
         return fetchAttachmentByEntityType(testExecutionId, ENTITY_TYPE_TEST_EXECUTION);
     }
 
+    public FetchSquadAttachmentResponse fetchExecutionStepAttachmentById(String executionStepId) throws ApiException {
+        return fetchAttachmentByEntityType(executionStepId, ENTITY_TYPE_TEST_STEP_RESULT);
+    }
+
     public FetchSquadExecutionStepParsedResponse fetchTestExecutionStepById(String testExecutionId) throws ApiException {
         var response = sendHttpGet(getUri(urlPath(FETCH_SQUAD_STEPRESULTS_ENDPOINT, testExecutionId)));
         List<SquadExecutionStepResponse> listofExecutionSteps = gson.fromJson(response, new TypeToken<List<SquadExecutionStepResponse>>(){}.getType());
@@ -148,6 +153,5 @@ public class SquadApi extends BaseApi {
         var response = sendHttpGet(getUri(urlPath(FETCH_ATTACHMENT_ENDPOINT, entityId, entityType)));
         return gson.fromJson(response, FetchSquadAttachmentResponse.class);
     }
-
 
 }

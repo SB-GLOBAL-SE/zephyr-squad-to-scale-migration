@@ -310,7 +310,7 @@ public class SquadToScaleMigrator {
             }
 
             logger.info("Updated steps and created test executions for " + orderedIssueList.size() + " issues.");
-
+//            var defectStepMap = squadToScaleExecutionStepMap.getExecutionStepMapHasDefects();
             return new SquadToScaleEntitiesMap(testCaseMap, testStepMap, testExecutionMap, squadToScaleExecutionStepMap);
         } catch (IOException exception) {
             logger.error("Failed to update steps and post execution " + exception.getMessage(), exception);

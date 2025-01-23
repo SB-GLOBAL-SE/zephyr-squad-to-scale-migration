@@ -42,10 +42,10 @@ public class AttachmentsMigrator {
     private final Map<String, GetProjectResponse> projectMetadata = new HashMap<>();
 
     private static final String[] csvHeader = {"FILE_NAME", "FILE_SIZE", "NAME", "PROJECT_ID", "USER_KEY", "TEMPORARY",
-            "CREATED_ON", "MIME_TYPE", "TEST_CASE_ID", "STEP_ID", "TEST_RESULT_ID"};
+            "CREATED_ON", "MIME_TYPE", "TEST_CASE_ID", "STEP_ID", "TEST_RESULT_ID", "TEST_SCRIPT_RESULT_ID"};
 
     private static final String[] csvMapping = {"FileName", "Size", "AttachmentName", "ProjectId", "AuthorKey", "Temporary",
-            "CreatedOn", "MimeType", "TestCaseId", "StepId", "TestResultId"};
+            "CreatedOn", "MimeType", "TestCaseId", "StepId", "TestResultId", "TestScriptResultId"};
 
     public AttachmentsMigrator(JiraApi jiraApi, ScaleApi scaleApi, SquadApi squadApi,
                                DriverManagerDataSource dataSource, AttachmentsCsvExporter attachmentsCsvExporter, AttachmentsCopier attachmentsCopier) {
@@ -78,13 +78,16 @@ public class AttachmentsMigrator {
         CompletableFuture<List<AttachmentAssociationData>> processingTestExecutions = startTestExecAsyncProcessing(project.id(),
                 entitiesMap.testExecutionMap());
 
-        CompletableFuture<List<AttachmentAssociationData>> attachmentsMapped = CompletableFuture
-                .allOf(processingTestCases, processingTestSteps, processingTestExecutions)
-                .thenApply(unused -> Stream.concat(Stream.concat(
-                        processingTestCases.join().stream(),
-                        processingTestSteps.join().stream()), processingTestExecutions.join().stream()).toList()
-                );
+        CompletableFuture<List<AttachmentAssociationData>> processingExecutionSteps = startExecutionStepAsyncProcessing(project.id(),
+                entitiesMap.executionStepMap());
 
+        CompletableFuture<List<AttachmentAssociationData>> attachmentsMapped = CompletableFuture
+                .allOf(processingTestCases, processingTestSteps, processingTestExecutions, processingExecutionSteps)
+                .thenApply(unused -> Stream.concat(Stream.concat(Stream.concat(
+                        processingTestCases.join().stream(), processingTestSteps.join().stream()),
+                        processingTestExecutions.join().stream()),
+                        processingExecutionSteps.join().stream()).toList()
+                );
 
         try {
             logger.info("Copying attachments to Scale directory");
@@ -135,6 +138,20 @@ public class AttachmentsMigrator {
                 .supplyAsync(() -> {
                     try {
                         return processTestExecutions(projectId, testExecutionMap);
+                    } catch (IOException e) {
+                        logger.error("Failed to map Test Run Attachments " + e.getMessage(), e);
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    private CompletableFuture<List<AttachmentAssociationData>> startExecutionStepAsyncProcessing(String projectId,
+                                                                                                 SquadToScaleExecutionStepMap squadToScaleExecutionStepMap) {
+        logger.info("Starting to process Execution Step attachments asynchronously");
+        return CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        return processExecutionSteps(projectId, squadToScaleExecutionStepMap);
                     } catch (IOException e) {
                         logger.error("Failed to map Test Run Attachments " + e.getMessage(), e);
                         throw new RuntimeException(e);
@@ -237,7 +254,6 @@ public class AttachmentsMigrator {
         var startTimeMillis = System.currentTimeMillis();
         var testExecutionIndex = 0;
         var testExecutionEntrySet = testExecutionMap.entrySet();
-
         List<AttachmentAssociationData> attachmentsMapped = new ArrayList<>();
 
         for (var testExecutionMapped : testExecutionEntrySet) {
@@ -248,7 +264,6 @@ public class AttachmentsMigrator {
             }
 
             FetchSquadAttachmentResponse testExecAttachments = squadApi.fetchTestExecutionAttachmentById(testExecutionMapped.getKey().testExecutionId());
-
 
             attachmentsMapped.addAll(testExecAttachments.data().stream().map(
                     attachment -> AttachmentAssociationData.createAttachmentAssociationDataFromTestExecution(
@@ -263,6 +278,41 @@ public class AttachmentsMigrator {
         }
 
         logger.info("Test Executions attachments processing finished");
+        return attachmentsMapped;
+
+    }
+
+    private List<AttachmentAssociationData> processExecutionSteps(String projectId,
+                                                                  SquadToScaleExecutionStepMap squadToScaleExecutionStepMap) throws IOException {
+
+        var startTimeMillis = System.currentTimeMillis();
+        var executionStepIndex = 0;
+        var attachmentExectuionStepMap = squadToScaleExecutionStepMap.getExecutionStepMapHasAttachments();
+
+        List<AttachmentAssociationData> attachmentsMapped = new ArrayList<>();
+
+        for (var testExecutionMapped : attachmentExectuionStepMap) {
+
+            if (executionStepIndex % 100 == 0) {
+                logger.info("Execution steps attachment progress for project: "
+                        + ProgressBarUtil.getProgressBar(executionStepIndex++, attachmentExectuionStepMap.size(), startTimeMillis));
+            }
+
+            FetchSquadAttachmentResponse testExecAttachments = squadApi.fetchExecutionStepAttachmentById(testExecutionMapped.getKey().executionStepId()+"");
+
+            attachmentsMapped.addAll(testExecAttachments.data().stream().map(
+                    attachment -> AttachmentAssociationData.createAttachmentAssociationDataFromExecutionStep(
+                            attachment.fileName(),
+                            attachment.fileId(),
+                            null,
+                            attachment.fileSize(),
+                            attachment.author(),
+                            projectId,
+                            testExecutionMapped.getValue().testScriptResultId()+"",
+                            new SquadOriginEntity(testExecutionMapped.getKey().executionStepId()+"", ""))).toList());
+        }
+
+        logger.info("Execution steps attachments processing finished");
         return attachmentsMapped;
 
     }

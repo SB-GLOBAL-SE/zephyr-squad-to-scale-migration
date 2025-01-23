@@ -24,6 +24,7 @@ public class AttachmentsCopier {
 
     private static final String TEST_STEP_ENTITY = "teststep";
     private static final String TEST_EXECUTION_ENTITY = "schedule";
+    private static final String TEST_EXECUTION_STEP_ENTITY = "teststepresult";
     private static final String FILES_FULL_PERMISSION = "rwxrwxrwx";
     private final String DESTINATION_DIR_PATH;
     private final String baseDir;
@@ -62,6 +63,11 @@ public class AttachmentsCopier {
                                 attachment.getFileName(),
                                 entityId,
                                 TEST_EXECUTION_ENTITY);
+                case TEST_EXECUTION_STEP ->
+                        originFilePath = getSquadEntityAttachmentPath(projectHistoricalKeys.keysHoldingData,
+                                attachment.getFileName(),
+                                entityId,
+                                TEST_EXECUTION_STEP_ENTITY);
 
                 case TEST_CASE -> {
                     String issueKeyAndNum = attachment.getSquadOriginEntity().key();
@@ -221,7 +227,7 @@ public class AttachmentsCopier {
                     .filter(Files::isDirectory)
                     .map(Path::getFileName)
                     .map(Path::toString)
-                    .anyMatch(fileName -> fileName.equals(TEST_STEP_ENTITY) || fileName.equals(TEST_EXECUTION_ENTITY));
+                    .anyMatch(fileName -> fileName.equals(TEST_STEP_ENTITY) || fileName.equals(TEST_EXECUTION_ENTITY) || fileName.equals(TEST_EXECUTION_STEP_ENTITY));
         } catch (IOException e) {
             return false;
         }

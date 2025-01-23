@@ -15,9 +15,10 @@ public class AttachmentAssociationData {
     String testCaseId;
     String stepId;
     String testResultId;
+    String testScriptResultId;
     SquadOriginEntity squadOriginEntity;
 
-    private AttachmentAssociationData(String attachmentName, String fileName, String mimeType, String size, String authorKey, String projectId, DestinationType destinationEntityType, Boolean temporary, String createdOn, String testCaseId, String stepId, String testResultI, SquadOriginEntity squadOriginEntity) {
+    private AttachmentAssociationData(String attachmentName, String fileName, String mimeType, String size, String authorKey, String projectId, DestinationType destinationEntityType, Boolean temporary, String createdOn, String testCaseId, String stepId, String testResultI, String testScriptResultId, SquadOriginEntity squadOriginEntity) {
         this.attachmentName = attachmentName;
         this.fileName = fileName;
         this.mimeType = mimeType;
@@ -30,6 +31,7 @@ public class AttachmentAssociationData {
         this.testCaseId = testCaseId;
         this.stepId = stepId;
         this.testResultId = testResultI;
+        this.testScriptResultId = testScriptResultId;
         this.squadOriginEntity = squadOriginEntity;
     }
 
@@ -54,6 +56,7 @@ public class AttachmentAssociationData {
                 false,
                 LocalDateTime.now().toString(),
                 destinationEntityId,
+                null,
                 null,
                 null,
                 squadOriginEntity
@@ -83,6 +86,7 @@ public class AttachmentAssociationData {
                 null,
                 destinationEntityId,
                 null,
+                null,
                 squadOriginEntity
         );
     }
@@ -107,6 +111,35 @@ public class AttachmentAssociationData {
                 DestinationType.TEST_EXECUTION,
                 false,
                 LocalDateTime.now().toString(),
+                null,
+                null,
+                destinationEntityId,
+                null,
+                squadOriginEntity
+        );
+    }
+
+    public static AttachmentAssociationData createAttachmentAssociationDataFromExecutionStep(
+            String attachmentName,
+            String fileName,
+            String mimeType,
+            String size,
+            String authorKey,
+            String projectId,
+            String destinationEntityId,
+            SquadOriginEntity squadOriginEntity
+    ) {
+        return new AttachmentAssociationData(
+                attachmentName,
+                fileName,
+                mimeType,
+                size,
+                authorKey,
+                projectId,
+                DestinationType.TEST_EXECUTION_STEP,
+                false,
+                LocalDateTime.now().toString(),
+                null,
                 null,
                 null,
                 destinationEntityId,
@@ -166,9 +199,14 @@ public class AttachmentAssociationData {
         return testResultId;
     }
 
+    public String getTestScriptResultId() {
+        return testScriptResultId;
+    }
+
     public enum DestinationType {
         TEST_CASE,
         TEST_STEP,
-        TEST_EXECUTION
+        TEST_EXECUTION,
+        TEST_EXECUTION_STEP
     }
 }
