@@ -5,5 +5,7 @@ public record SquadToScaleEntitiesMap (
 
         SquadToScaleTestStepMap testStepMap,
 
-        SquadToScaleTestExecutionMap testExecutionMap
+        SquadToScaleTestExecutionMap testExecutionMap,
+
+        SquadToScaleExecutionStepMap executionStepMap
 ){}

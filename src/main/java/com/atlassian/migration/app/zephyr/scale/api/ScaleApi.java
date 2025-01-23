@@ -18,7 +18,6 @@ import java.util.*;
 public class ScaleApi extends BaseApi {
 
     private static final Logger logger = LoggerFactory.getLogger(ScaleApi.class);
-
     public static final String ENABLE_PROJECT_ENDPOINT = "/rest/atm/1.0/project";
     public static final String CREATE_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield";
     public static final String ADD_OPTION_TO_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield/%s/option";
@@ -26,6 +25,7 @@ public class ScaleApi extends BaseApi {
     public static final String SCALE_TEST_STEP_ENDPOINT = "/rest/atm/1.0/testcase/%s";
     public static final String CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT = "/rest/atm/1.0/testrun";
     public static final String CREATE_SCALE_TEST_RESULTS_ENDPOINT = "/rest/atm/1.0/testrun/%s/testresults";
+    public static final String FETCH_SCALE_TEST_RESULTS_ENDPOINT = "/rest/tests/1.0/testresult/%s?fields=id,key,testScriptResults";
     public static final String FETCH_SCALE_RESULTS_STATUSES = "/rest/tests/1.0/testresultstatus?projectId=%s";
     public static final String CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT = "/rest/tests/1.0/testresultstatus";
     public static final String CUSTOM_FIELD_DUPLICATED_EXPECTED_MESSAGE = "Custom field name is duplicated";
@@ -85,6 +85,17 @@ public class ScaleApi extends BaseApi {
         return new FetchScaleResultsStatusesResponse(new ArrayList<>());
     }
 
+    public FetchScaleTestResults fetchTestResultsbyId(String testResultId) throws ZephyrApiException {
+        try {
+            var response = sendHttpGet(getUri(urlPath(FETCH_SCALE_TEST_RESULTS_ENDPOINT, testResultId)));
+            FetchScaleTestResults scaleTestResults = gson.fromJson(response, FetchScaleTestResults.class);
+            return scaleTestResults;
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTRESULTS_STATUS, testResultId), e);
+        }
+        return null;
+    }
+
     public String createScaleTestResultsStatus(String projectId, String statusName, String statusDescription, String statusColor) throws ZephyrApiException{
         Map<String, Object> params = new HashMap<>();
         params.put("projectId", Integer.parseInt(projectId));
@@ -97,7 +108,6 @@ public class ScaleApi extends BaseApi {
             response = sendHttpPost(CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT, params);
         } catch (ApiException e) {
             ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_RESULTS_STATUS, e);
-
         }
 
         Map<String, Object> result = gson.fromJson(response, Map.class);
@@ -207,6 +217,9 @@ public class ScaleApi extends BaseApi {
 
         public static final String ERROR_FETCHING_TESTRESULTS_STATUS = "Error while fetching Test results status at " +
                 FETCH_SCALE_RESULTS_STATUSES;
+
+        public static final String ERROR_FETCHING_TESTRESULTS = "Error while fetching Test results at " +
+                FETCH_SCALE_TEST_RESULTS_ENDPOINT;
 
         public static final String ERROR_CREATE_TEST_CYCLE = "Error while creating Test Cycle at "
                 + CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT;

@@ -4,7 +4,9 @@ import com.atlassian.migration.app.zephyr.common.ApiException;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.AssignableUserResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionCreationPayload;
+import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionStepPayload;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationExecutionCustomFieldPayload;
+import com.atlassian.migration.app.zephyr.squad.model.FetchSquadExecutionStepParsedResponse;
 import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionItemParsedResponse;
 
 import java.io.IOException;
@@ -43,7 +45,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
     }
 
     public ScaleExecutionCreationPayload buildPayload(
-            SquadExecutionItemParsedResponse executionData, String scaleTestCaseKey, String projectKey) throws IOException {
+            SquadExecutionItemParsedResponse executionData, String scaleTestCaseKey, String projectKey, FetchSquadExecutionStepParsedResponse testExectuionStepResponse) throws IOException {
 
         var executedByValidation = validateAssignedUser(executionData.createdByUserName(), projectKey);
         var assignedToValidation = validateAssignedUser(executionData.assignedToOrStr().toString(), projectKey);
@@ -56,6 +58,18 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
                 }
             });
         }
+        List<ScaleExecutionStepPayload> scriptResults = new ArrayList<>();
+        if(testExectuionStepResponse != null &&
+                testExectuionStepResponse.executionSteps() != null &&
+                testExectuionStepResponse.executionSteps().size() > 0){
+            for(var executionStepResponse:testExectuionStepResponse.executionSteps()){
+                scriptResults.add( new ScaleExecutionStepPayload(executionStepResponse.index(),
+                                        translateSquadToScaleExecStatus(executionStepResponse.status().name()),
+                                        executionStepResponse.comment()
+                                ));
+            }
+        }
+
         return new ScaleExecutionCreationPayload(
                 translateSquadToScaleExecStatus(executionData.status().name()),
                 scaleTestCaseKey,
@@ -63,6 +77,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
                 executionData.htmlComment(),
                 translateSquadToScaleVersion(executionData.versionName()),
                 defects,
+                scriptResults,
                 new ScaleMigrationExecutionCustomFieldPayload(
                         executionData.executedOnOrStr(),
                         assignedToValidation ? executionData.assignedTo() : DEFAULT_NONE_USER,

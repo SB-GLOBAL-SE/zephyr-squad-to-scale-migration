@@ -104,7 +104,6 @@ class AttachmentsMigratorTest {
                 new SquadToScaleTestStepMap.TestStepMapKey("1", "1"), Collections.emptyList()
         ));
 
-
         testExecMap.put(
                 new SquadToScaleTestExecutionMap.TestExecutionMapKey("1"), "EXEC-1"
         );
@@ -118,7 +117,8 @@ class AttachmentsMigratorTest {
         squadToScaleEntitiesMapMock = new SquadToScaleEntitiesMap(
                 new SquadToScaleTestCaseMap(),
                 testStepMap,
-                testExecMap);
+                testExecMap,
+                new SquadToScaleExecutionStepMap());
 
         when(jiraApiMock.getProjectByKeyWithHistoricalKeys(projectKey)).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList()));
 

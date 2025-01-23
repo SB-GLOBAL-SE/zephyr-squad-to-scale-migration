@@ -16,6 +16,7 @@ public class SquadApi extends BaseApi {
 
     public static final String FETCH_SQUAD_TEST_STEP_ENDPOINT = "/rest/zapi/latest/teststep/%s";
     public static final String FETCH_SQUAD_EXECUTION_ENDPOINT = "/rest/zapi/latest/execution?issueId=%s";
+    public static final String FETCH_SQUAD_STEPRESULTS_ENDPOINT = "/rest/zapi/latest/stepResult?executionId=%s";
     public static final String FETCH_ATTACHMENT_ENDPOINT = "/rest/zapi/latest/attachment/attachmentsByEntity?entityId=%s&entityType=%s";
     public static final String GET_ALL_PROJECTS_ENDPOINT = "/rest/zapi/latest/util/project-list";
     public static final String FETCH_SQUAD_EXECUTION_STATUSES = "/rest/zapi/latest/util/testExecutionStatus";
@@ -25,6 +26,14 @@ public class SquadApi extends BaseApi {
 
 
     public static final Map<Integer, SquadExecutionTypeResponse> EXECUTION_TYPES = Stream.of(
+            new SquadExecutionTypeResponse(-1, "Unexecuted"),
+            new SquadExecutionTypeResponse(1, "Pass"),
+            new SquadExecutionTypeResponse(2, "Fail"),
+            new SquadExecutionTypeResponse(3, "WIP"),
+            new SquadExecutionTypeResponse(4, "Blocked")
+    ).collect(Collectors.toMap(SquadExecutionTypeResponse::id, e -> e));
+
+    public static final Map<Integer, SquadExecutionTypeResponse> STEP_EXECUTION_TYPES = Stream.of(
             new SquadExecutionTypeResponse(-1, "Unexecuted"),
             new SquadExecutionTypeResponse(1, "Pass"),
             new SquadExecutionTypeResponse(2, "Fail"),
@@ -57,7 +66,6 @@ public class SquadApi extends BaseApi {
         var response = sendHttpGet(getUri(urlPath(FETCH_SQUAD_TEST_STEP_ENDPOINT, testCaseId)));
         return gson.fromJson(response, FetchSquadTestStepResponse.class);
     }
-
 
     public FetchSquadExecutionParsedResponse fetchLatestExecutionByIssueId(String issueId) throws ApiException {
 
@@ -101,15 +109,40 @@ public class SquadApi extends BaseApi {
         }
     }
 
+    public void updateExecutionStepStatusTypes(List<SquadExecutionStatusResponse> allStatuses) {
+        for(var executionStatusResponse:allStatuses){
+            int statusId = Integer.parseInt(executionStatusResponse.id());
+            if(!STEP_EXECUTION_TYPES.containsKey(statusId)){
+                STEP_EXECUTION_TYPES.put(statusId,
+                        new SquadExecutionTypeResponse(statusId, executionStatusResponse.name()));
+            }
+        }
+    }
+
     public FetchSquadAttachmentResponse fetchTestExecutionAttachmentById(String testExecutionId) throws ApiException {
         return fetchAttachmentByEntityType(testExecutionId, ENTITY_TYPE_TEST_EXECUTION);
+    }
+
+    public FetchSquadExecutionStepParsedResponse fetchTestExecutionStepById(String testExecutionId) throws ApiException {
+        var response = sendHttpGet(getUri(urlPath(FETCH_SQUAD_STEPRESULTS_ENDPOINT, testExecutionId)));
+        List<SquadExecutionStepResponse> listofExecutionSteps = gson.fromJson(response, new TypeToken<List<SquadExecutionStepResponse>>(){}.getType());
+        var data = new FetchSquadExecutionStepResponse(listofExecutionSteps);
+        var executionSteps = data.executionsteps().stream()
+                .map(e -> new SquadExecutionStepParsedResponse(
+                        e.id(),
+                        e.orderId()-1,
+                        STEP_EXECUTION_TYPES.get(e.status()),
+                        e.comment(),
+                        e.stepResultAttachmentCount(),
+                        e.defects().stream().map(def -> def.key()).toList())).toList();
+
+        return new FetchSquadExecutionStepParsedResponse(executionSteps);
     }
 
     //It seems the API doesn't deliver Test Steps attachments through this endpoint (but it should)
     public FetchSquadAttachmentResponse fetchTestStepAttachmentById(String testStepId) throws ApiException {
         return fetchAttachmentByEntityType(testStepId, ENTITY_TYPE_TEST_STEP);
     }
-
 
     private FetchSquadAttachmentResponse fetchAttachmentByEntityType(String entityId, String entityType) throws ApiException {
         var response = sendHttpGet(getUri(urlPath(FETCH_ATTACHMENT_ENDPOINT, entityId, entityType)));

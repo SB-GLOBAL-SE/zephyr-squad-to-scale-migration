@@ -1,13 +1,9 @@
 package com.atlassian.migration.app.zephyr.migration;
 
 import com.atlassian.migration.app.zephyr.common.ProgressBarUtil;
-import com.atlassian.migration.app.zephyr.common.ZephyrApiException;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
-import com.atlassian.migration.app.zephyr.migration.model.SquadToScaleEntitiesMap;
-import com.atlassian.migration.app.zephyr.migration.model.SquadToScaleTestCaseMap;
-import com.atlassian.migration.app.zephyr.migration.model.SquadToScaleTestExecutionMap;
-import com.atlassian.migration.app.zephyr.migration.model.SquadToScaleTestStepMap;
+import com.atlassian.migration.app.zephyr.migration.model.*;
 import com.atlassian.migration.app.zephyr.migration.service.Resettable;
 import com.atlassian.migration.app.zephyr.migration.service.ScaleCycleService;
 import com.atlassian.migration.app.zephyr.migration.service.ScaleTestCasePayloadFacade;
@@ -170,6 +166,7 @@ public class SquadToScaleMigrator {
 
             // checking for SQAUD Step Execution statuses which are not part of scale test results statuses
             if(squadStepResultsStatuses != null && squadStepResultsStatuses.data() != null){
+                squadApi.updateExecutionStepStatusTypes(squadStepResultsStatuses.data());
                 squadStepResultsStatuses.data().forEach( executionStatus -> {
                     String statusName = executionStatus.name();
                     if(!IGNORABLE_SQUAD_STATUSES.contains(statusName) && !scaleTestResultsStatuses.containsKey(statusName)) {
@@ -306,15 +303,15 @@ public class SquadToScaleMigrator {
 
             var testStepMap = new SquadToScaleTestStepMap();
             var testExecutionMap = new SquadToScaleTestExecutionMap();
-
+            var squadToScaleExecutionStepMap = new SquadToScaleExecutionStepMap();
             for (var testCaseItem : orderedIssueList) {
                 testStepMap.putAll(updateStepsForTestCase(testCaseItem));
-                testExecutionMap.putAll(createTestExecutionForTestCase(testCaseItem, projectKey));
+                testExecutionMap.putAll(createTestExecutionForTestCase(testCaseItem, projectKey, squadToScaleExecutionStepMap));
             }
 
             logger.info("Updated steps and created test executions for " + orderedIssueList.size() + " issues.");
 
-            return new SquadToScaleEntitiesMap(testCaseMap, testStepMap, testExecutionMap);
+            return new SquadToScaleEntitiesMap(testCaseMap, testStepMap, testExecutionMap, squadToScaleExecutionStepMap);
         } catch (IOException exception) {
             logger.error("Failed to update steps and post execution " + exception.getMessage(), exception);
             throw new RuntimeException(exception);
@@ -361,7 +358,7 @@ public class SquadToScaleMigrator {
 
     private SquadToScaleTestExecutionMap createTestExecutionForTestCase
             (Map.Entry<SquadToScaleTestCaseMap.TestCaseMapKey,
-                    String> item, String projectKey) throws IOException {
+                    String> item, String projectKey, SquadToScaleExecutionStepMap squadToScaleExecutionStepMap) throws IOException {
         try {
             logger.info("Fetching latest Squad execution for test case " + item.getKey().testCaseId() + "...");
             var execData = squadApi.fetchLatestExecutionByIssueId(item.getKey().testCaseId());
@@ -370,11 +367,11 @@ public class SquadToScaleMigrator {
 
             var testExecutionMap = new SquadToScaleTestExecutionMap();
 
+
             if (executions.isEmpty()) {
                 logger.info("Test case " + item.getKey().testCaseId() + " doesn't have executions, skipping...");
                 return testExecutionMap;
             }
-
 
             for (var execution : executions) {
 
@@ -383,14 +380,40 @@ public class SquadToScaleMigrator {
 
                 logger.info("Creating test executions...");
 
+                var testExectuionStepResponse = squadApi.fetchTestExecutionStepById(execution.id());
                 var testExecutionPayload = scaleTestExecutionPayloadFacade
-                        .buildPayload(execution, item.getValue(), projectKey);
+                        .buildPayload(execution, item.getValue(), projectKey, testExectuionStepResponse);
 
                 var scaleTestExecutionCreatedPayload = scaleApi.createTestExecution(scaleCycleKey,
                         testExecutionPayload);
                 testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id()),
 //                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id(), execution.createdBy(), execution.createdOn(), null, null),
                         scaleTestExecutionCreatedPayload.id());
+
+                // fetching Step Results or Execution Step Mapping
+                var fetchScaleTestResults = scaleApi.fetchTestResultsbyId(scaleTestExecutionCreatedPayload.id());
+                if(testExectuionStepResponse != null &&
+                        testExectuionStepResponse.executionSteps() !=null &&
+                        testExectuionStepResponse.executionSteps().size() > 0){
+                    if(fetchScaleTestResults != null &&
+                        fetchScaleTestResults.testScriptResults() != null &&
+                        fetchScaleTestResults.testScriptResults().size() > 0){
+                        List<ScaleTestScriptResults> scaleTestScriptResultsMap = fetchScaleTestResults.testScriptResults();
+                        int index = 0;
+                        int length = scaleTestScriptResultsMap.size();
+                        for(var executionStepRespone:testExectuionStepResponse.executionSteps()){
+                           if(index >= length){
+                               break;
+                           }
+
+                           var scaleTestScriptResults = scaleTestScriptResultsMap.get(index);
+                           var squadExecutionStep = new SquadToScaleExecutionStepMap.SquadExecutionStepMapKey(executionStepRespone.id(), execution.id(), executionStepRespone.attachmentCount(), executionStepRespone.defects());
+                           var scaleExecutionStep = new SquadToScaleExecutionStepMap.ScaleExecutionStepMapValue(scaleTestScriptResults.id(), scaleTestExecutionCreatedPayload.id());
+                           squadToScaleExecutionStepMap.put(squadExecutionStep, scaleExecutionStep);
+                           index++;
+                        }
+                    }
+                }
 
             }
 

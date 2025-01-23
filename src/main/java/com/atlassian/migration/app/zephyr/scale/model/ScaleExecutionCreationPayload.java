@@ -8,7 +8,7 @@ public record ScaleExecutionCreationPayload(
         Object executedBy,
         Object comment,
         String version,
-
         List<String> issueLinks,
+        List<ScaleExecutionStepPayload> scriptResults,
         ScaleMigrationExecutionCustomFieldPayload customFields) {
 }
