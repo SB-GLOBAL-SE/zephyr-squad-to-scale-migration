@@ -8,6 +8,7 @@ public record MigrationConfiguration(
         String cycleNamePlaceHolder,
         String attachmentsMappedCsvFile,
         String testCaseCSVFile,
+        String testExecutionCSVFile,
         String databaseType,
         String attachmentsBaseFolder) {
 }

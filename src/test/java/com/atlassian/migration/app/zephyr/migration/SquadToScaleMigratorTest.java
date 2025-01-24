@@ -3,6 +3,7 @@ package com.atlassian.migration.app.zephyr.migration;
 import com.atlassian.migration.app.zephyr.common.ApiConfiguration;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.*;
+import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionPostMigrator;
 import com.atlassian.migration.app.zephyr.migration.testcase.TestCasePostMigrator;
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
 import com.atlassian.migration.app.zephyr.scale.model.GetAllProjectsResponse;
@@ -42,6 +43,8 @@ class SquadToScaleMigratorTest {
     @Mock
     TestCasePostMigrator testCasePostMigratorMock;
     @Mock
+    TestExecutionPostMigrator testExecutionPostMigrator;
+    @Mock
     private ApiConfiguration apiConfigurationMock;
 
     private MigrationConfiguration migConfigSpy;
@@ -62,11 +65,13 @@ class SquadToScaleMigratorTest {
                 "CYCLE",
                 "attachments_mapped.csv",
                 "test_cases_Mapped.csv",
+                "test_executions_Mapped.csv",
                 "postgres",
                 "/home/ubuntu"));
 
         migratorSpy = spy(new SquadToScaleMigrator(jiraApiMock, squadApiMock, scaleApiMock, attachmentsMigratorMock,
                 testCasePostMigratorMock,
+                testExecutionPostMigrator,
                 migConfigSpy));
 
         when(jiraApiMock.getProjectByKey(any())).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList()));

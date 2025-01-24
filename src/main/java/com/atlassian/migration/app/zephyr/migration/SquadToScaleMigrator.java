@@ -3,6 +3,7 @@ package com.atlassian.migration.app.zephyr.migration;
 import com.atlassian.migration.app.zephyr.common.ProgressBarUtil;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
+import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionPostMigrator;
 import com.atlassian.migration.app.zephyr.migration.model.*;
 import com.atlassian.migration.app.zephyr.migration.service.Resettable;
 import com.atlassian.migration.app.zephyr.migration.service.ScaleCycleService;
@@ -39,10 +40,12 @@ public class SquadToScaleMigrator {
 
     private final AttachmentsMigrator attachmentsMigrator;
     private final TestCasePostMigrator testCasePostMigrator;
+    private final TestExecutionPostMigrator testExecutionPostMigrator;
     private final List<Resettable> resettables = new ArrayList<>();
 
     public SquadToScaleMigrator(JiraApi jiraApi, SquadApi squadApi, ScaleApi scaleApi, AttachmentsMigrator attachmentsMigrator,
                                 TestCasePostMigrator testCasePostMigrator,
+                                TestExecutionPostMigrator testExecutionPostMigrator,
                                 MigrationConfiguration migConfig) {
         this.jiraApi = jiraApi;
         this.scaleApi = scaleApi;
@@ -57,6 +60,7 @@ public class SquadToScaleMigrator {
         this.scaleTestCaseFacade = new ScaleTestCasePayloadFacade(jiraApi);
         this.attachmentsMigrator = attachmentsMigrator;
         this.testCasePostMigrator = testCasePostMigrator;
+        this.testExecutionPostMigrator = testExecutionPostMigrator;
     }
 
     public void getProjectListAndRunMigration() {
@@ -136,6 +140,7 @@ public class SquadToScaleMigrator {
 
             attachmentsMigrator.export(squadToScaleEntitiesMap, projectKey);
             testCasePostMigrator.export(squadToScaleEntitiesMap, projectKey);
+            testExecutionPostMigrator.export(squadToScaleEntitiesMap, projectKey);
         } catch (IOException exception) {
             logger.error("Failed to process page with start at: " + startAt + " " + exception.getMessage(), exception);
             throw new RuntimeException(exception);
@@ -390,8 +395,8 @@ public class SquadToScaleMigrator {
 
                 var scaleTestExecutionCreatedPayload = scaleApi.createTestExecution(scaleCycleKey,
                         testExecutionPayload);
-                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id()),
-//                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id(), execution.createdBy(), execution.createdOn(), null, null),
+//                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id()),
+                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id(), execution.createdBy(), execution.createdOn(), null, null),
                         scaleTestExecutionCreatedPayload.id());
 
                 // fetching Step Results or Execution Step Mapping

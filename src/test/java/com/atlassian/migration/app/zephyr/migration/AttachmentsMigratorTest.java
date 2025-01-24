@@ -106,13 +106,13 @@ class AttachmentsMigratorTest {
         ));
 
         testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("1"), "EXEC-1"
+                new SquadToScaleTestExecutionMap.TestExecutionMapKey("1", "created By", "created On", "modifiedBy", "modifiedOn"), "EXEC-1"
         );
         testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("2"), "EXEC-2"
+                new SquadToScaleTestExecutionMap.TestExecutionMapKey("2", "created By", "created On", "modifiedBy", "modifiedOn"), "EXEC-2"
         );
         testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("3"), "EXEC-3"
+                new SquadToScaleTestExecutionMap.TestExecutionMapKey("3", "created By", "created On", "modifiedBy", "modifiedOn"), "EXEC-3"
         );
 
         squadToScaleEntitiesMapMock = new SquadToScaleEntitiesMap(
