@@ -75,7 +75,8 @@ class AttachmentsMigratorTest {
                 attachmentsCopier);
 
         testCaseMap.put(
-                new SquadToScaleTestCaseMap.TestCaseMapKey("1", "SQUAD-1"), "SCALE-1"
+                new SquadToScaleTestCaseMap.TestCaseMapKey("1", "SQUAD-1", "Squad created by", "squad created date",
+                        "squad modified by", "squad modified date"), "SCALE-1"
         );
 
         doNothing().when(attachmentsCopier).copyAttachments(any(), any(), any());

@@ -7,6 +7,7 @@ public record MigrationConfiguration(
         int pageSteps,
         String cycleNamePlaceHolder,
         String attachmentsMappedCsvFile,
+        String testCaseCSVFile,
         String databaseType,
         String attachmentsBaseFolder) {
 }

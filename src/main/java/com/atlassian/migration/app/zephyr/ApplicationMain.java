@@ -5,6 +5,8 @@ import com.atlassian.migration.app.zephyr.common.DataSourceFactory;
 import com.atlassian.migration.app.zephyr.common.PropertySanitizer;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.migration.*;
+import com.atlassian.migration.app.zephyr.migration.testcase.TestCaseCsvExporter;
+import com.atlassian.migration.app.zephyr.migration.testcase.TestCasePostMigrator;
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
 import org.slf4j.Logger;
@@ -57,6 +59,7 @@ public class ApplicationMain {
         var pageSteps = Integer.parseInt(prop.getProperty("batchSize"));
         var cycleNamePlaceHolder = prop.getProperty("cycleNamePlaceHolder", "");
         var attachmentsMappedCsvFile = prop.getProperty("attachmentsMappedCsvFile");
+        var testCaseCSVFile = prop.getProperty("testCaseMappedCsvFile");
         var databaseType = prop.getProperty("database");
         var httpVersion = prop.getProperty("httpVersion");
         var attachmentsBaseFolder = PropertySanitizer.sanitizeAttachmentsBaseFolder(prop.getProperty("attachmentsBaseFolder"));
@@ -67,7 +70,7 @@ public class ApplicationMain {
         var apiConfig = new ApiConfiguration(host, username, password.toCharArray(), httpVersion);
 
         return new MigrationConfiguration(apiConfig, pageSteps, cycleNamePlaceHolder,
-                attachmentsMappedCsvFile, databaseType, attachmentsBaseFolder);
+                attachmentsMappedCsvFile, testCaseCSVFile, databaseType, attachmentsBaseFolder);
     }
 
     private static SquadToScaleMigrator createSquadToScaleMigrator(MigrationConfiguration migrationConfig) throws IOException {
@@ -75,6 +78,7 @@ public class ApplicationMain {
         var squadApi = new SquadApi(migrationConfig.apiConfiguration());
         var scaleApi = new ScaleApi(migrationConfig.apiConfiguration());
         var csvExporter = new AttachmentsCsvExporter(migrationConfig.attachmentsMappedCsvFile());
+        var testCaseCsvExporter = new TestCaseCsvExporter(migrationConfig.testCaseCSVFile());
         var attachmentsCopier = new AttachmentsCopier(migrationConfig.attachmentsBaseFolder());
 
         var dataSourceFactory = new DataSourceFactory();
@@ -82,8 +86,10 @@ public class ApplicationMain {
 
         var attachmentsCsvExporter = new AttachmentsMigrator(jiraApi, scaleApi, squadApi, dataSource,
                 csvExporter, attachmentsCopier);
+        var testCaseMigrator = new TestCasePostMigrator(jiraApi, testCaseCsvExporter);
 
         return new SquadToScaleMigrator(jiraApi, squadApi, scaleApi, attachmentsCsvExporter,
+                testCaseMigrator,
                 migrationConfig);
     }
 }

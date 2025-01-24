@@ -12,7 +12,9 @@ public class JiraIssueFieldResponse {
     public String description;
     public List<String> labels;
     public JiraReporterResponse reporter;
-
+    public String created;
+    public JiraCreatorResponse creator;
+    public String updated;
     public JiraIssueStatusResponse status;
     public List<IssueLink> issuelinks;
     public List<JiraIssueComponent> components;

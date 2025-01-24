@@ -8,6 +8,7 @@ import com.atlassian.migration.app.zephyr.migration.service.Resettable;
 import com.atlassian.migration.app.zephyr.migration.service.ScaleCycleService;
 import com.atlassian.migration.app.zephyr.migration.service.ScaleTestCasePayloadFacade;
 import com.atlassian.migration.app.zephyr.migration.service.ScaleTestExecutionPayloadFacade;
+import com.atlassian.migration.app.zephyr.migration.testcase.TestCasePostMigrator;
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
 import com.atlassian.migration.app.zephyr.scale.model.*;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
@@ -37,10 +38,11 @@ public class SquadToScaleMigrator {
     private final ScaleTestCasePayloadFacade scaleTestCaseFacade;
 
     private final AttachmentsMigrator attachmentsMigrator;
-
+    private final TestCasePostMigrator testCasePostMigrator;
     private final List<Resettable> resettables = new ArrayList<>();
 
     public SquadToScaleMigrator(JiraApi jiraApi, SquadApi squadApi, ScaleApi scaleApi, AttachmentsMigrator attachmentsMigrator,
+                                TestCasePostMigrator testCasePostMigrator,
                                 MigrationConfiguration migConfig) {
         this.jiraApi = jiraApi;
         this.scaleApi = scaleApi;
@@ -54,6 +56,7 @@ public class SquadToScaleMigrator {
 
         this.scaleTestCaseFacade = new ScaleTestCasePayloadFacade(jiraApi);
         this.attachmentsMigrator = attachmentsMigrator;
+        this.testCasePostMigrator = testCasePostMigrator;
     }
 
     public void getProjectListAndRunMigration() {
@@ -132,6 +135,7 @@ public class SquadToScaleMigrator {
             var squadToScaleEntitiesMap = updateStepsAndPostExecution(testCaseMap, projectKey);
 
             attachmentsMigrator.export(squadToScaleEntitiesMap, projectKey);
+            testCasePostMigrator.export(squadToScaleEntitiesMap, projectKey);
         } catch (IOException exception) {
             logger.error("Failed to process page with start at: " + startAt + " " + exception.getMessage(), exception);
             throw new RuntimeException(exception);
@@ -263,11 +267,11 @@ public class SquadToScaleMigrator {
 
             for (var issue : issues) {
                 var scaleTestCaseKey = createTestCaseForIssue(issue, projectKey);
-                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key()), scaleTestCaseKey);
-//                String creatorKey = (issue.fields().creator != null && issue.fields().creator.key() != null)
-//                        ? issue.fields().creator.key()
-//                        : null;
-//                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key(), creatorKey, issue.fields().created, null, issue.fields().updated), scaleTestCaseKey);
+//                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key()), scaleTestCaseKey);
+                String creatorKey = (issue.fields().creator != null && issue.fields().creator.key() != null)
+                        ? issue.fields().creator.key()
+                        : null;
+                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key(), creatorKey, issue.fields().created, null, issue.fields().updated), scaleTestCaseKey);
             }
             return map;
         } catch (IOException exception) {
