@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,7 @@ class AttachmentsCopierTest {
             "mime",
             "123456",
             "author",
+            "createdon",
             "10100",
             "1",
             new SquadOriginEntity("1", "JIRA-1"));
@@ -36,6 +38,7 @@ class AttachmentsCopierTest {
             "mime",
             "123456",
             "author",
+            LocalDateTime.now().toString(),
             "10100",
             "1",
             new SquadOriginEntity("1", ""));
@@ -46,6 +49,7 @@ class AttachmentsCopierTest {
             "mime",
             "123456",
             "author",
+            LocalDateTime.now().toString(),
             "10100",
             "1",
             new SquadOriginEntity("1", ""));
@@ -56,6 +60,7 @@ class AttachmentsCopierTest {
             "mime",
             "123456",
             "author",
+            LocalDateTime.now().toString(),
             "10100",
             "1",
             new SquadOriginEntity("1", ""));

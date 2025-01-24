@@ -195,6 +195,7 @@ public class AttachmentsMigrator {
                             null,
                             attachment.size(),
                             attachment.author() == null ? null : attachment.author().key(),
+                            attachment.created(),
                             projectId,
                             String.valueOf(scaleTestCaseEntity.get().id()),
                             new SquadOriginEntity(testCaseMapped.getKey().testCaseId(), testCaseMapped.getKey().testCaseKey()))).toList());
@@ -236,6 +237,7 @@ public class AttachmentsMigrator {
                                 null,
                                 attachment.fileSize(),
                                 attachment.author(),
+                                attachment.dateCreated(),
                                 projectId,
                                 scaleStepData.get(Integer.parseInt(attachmentsPerOrder.getKey().stepOrder()) - 1),
                                 new SquadOriginEntity(attachmentsPerOrder.getKey().stepId(), ""))).toList());
@@ -243,6 +245,8 @@ public class AttachmentsMigrator {
             }
         }
 
+        logger.info("Test step attachments progress: "
+                + ProgressBarUtil.getProgressBar(testStepEntrySet.size(), testStepEntrySet.size(), startTimeMillis));
         logger.info("Test Steps attachments processing finished");
         return attachmentsMapped;
 
@@ -272,11 +276,14 @@ public class AttachmentsMigrator {
                             null,
                             attachment.fileSize(),
                             attachment.author(),
+                            attachment.dateCreated(),
                             projectId,
                             testExecutionMapped.getValue(),
                             new SquadOriginEntity(testExecutionMapped.getKey().testExecutionId(), ""))).toList());
         }
 
+        logger.info("Test Executions attachments progress: "
+                + ProgressBarUtil.getProgressBar(testExecutionEntrySet.size(), testExecutionEntrySet.size(), startTimeMillis));
         logger.info("Test Executions attachments processing finished");
         return attachmentsMapped;
 
@@ -307,11 +314,14 @@ public class AttachmentsMigrator {
                             null,
                             attachment.fileSize(),
                             attachment.author(),
+                            attachment.dateCreated(),
                             projectId,
                             testExecutionMapped.getValue().testScriptResultId()+"",
                             new SquadOriginEntity(testExecutionMapped.getKey().executionStepId()+"", ""))).toList());
         }
 
+        logger.info("Execution step attachments progress: "
+                + ProgressBarUtil.getProgressBar(attachmentExectuionStepMap.size(), attachmentExectuionStepMap.size(), startTimeMillis));
         logger.info("Execution steps attachments processing finished");
         return attachmentsMapped;
 

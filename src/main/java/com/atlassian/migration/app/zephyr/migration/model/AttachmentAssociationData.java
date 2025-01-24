@@ -1,5 +1,7 @@
 package com.atlassian.migration.app.zephyr.migration.model;
 
+import com.atlassian.migration.app.zephyr.common.TimeUtils;
+
 import java.time.LocalDateTime;
 
 public class AttachmentAssociationData {
@@ -41,6 +43,7 @@ public class AttachmentAssociationData {
             String mimeType,
             String size,
             String authorKey,
+            String created,
             String projectId,
             String destinationEntityId,
             SquadOriginEntity squadOriginEntity
@@ -54,7 +57,7 @@ public class AttachmentAssociationData {
                 projectId,
                 DestinationType.TEST_CASE,
                 false,
-                LocalDateTime.now().toString(),
+                TimeUtils.getUTCTimestampforJiraDate(created),
                 destinationEntityId,
                 null,
                 null,
@@ -69,6 +72,7 @@ public class AttachmentAssociationData {
             String mimeType,
             String size,
             String authorKey,
+            String created,
             String projectId,
             String destinationEntityId,
             SquadOriginEntity squadOriginEntity
@@ -82,7 +86,8 @@ public class AttachmentAssociationData {
                 projectId,
                 DestinationType.TEST_STEP,
                 false,
-                LocalDateTime.now().toString(),
+//                LocalDateTime.now().toString(),
+                TimeUtils.getUTCTImestampforSquadAttachment(created),
                 null,
                 destinationEntityId,
                 null,
@@ -97,6 +102,7 @@ public class AttachmentAssociationData {
             String mimeType,
             String size,
             String authorKey,
+            String created,
             String projectId,
             String destinationEntityId,
             SquadOriginEntity squadOriginEntity
@@ -110,7 +116,8 @@ public class AttachmentAssociationData {
                 projectId,
                 DestinationType.TEST_EXECUTION,
                 false,
-                LocalDateTime.now().toString(),
+                //LocalDateTime.now().toString(),
+                TimeUtils.getUTCTImestampforSquadAttachment(created),
                 null,
                 null,
                 destinationEntityId,
@@ -125,6 +132,7 @@ public class AttachmentAssociationData {
             String mimeType,
             String size,
             String authorKey,
+            String created,
             String projectId,
             String destinationEntityId,
             SquadOriginEntity squadOriginEntity
@@ -138,7 +146,8 @@ public class AttachmentAssociationData {
                 projectId,
                 DestinationType.TEST_EXECUTION_STEP,
                 false,
-                LocalDateTime.now().toString(),
+//                LocalDateTime.now().toString(),
+                TimeUtils.getUTCTImestampforSquadAttachment(created),
                 null,
                 null,
                 null,
