@@ -50,6 +50,11 @@ public class JiraApi extends BaseApi {
         return gson.fromJson(response, JiraIssuesResponse.class);
     }
 
+    public JiraIssuesResponse getIssueByIssueKey(String issueKey) throws IOException {
+        var response = sendHttpGet(getUri(urlPath(GET_ISSUE_BY_ID_ENDPOINT, issueKey)));
+        return gson.fromJson(response, JiraIssuesResponse.class);
+    }
+
     public List<Attachment> getIssueAttachmentsByIssueId(String id) throws IOException {
         return getIssueById(id).fields().attachment;
     }

@@ -28,6 +28,7 @@ public class SquadToScaleMigrator {
     private static final Logger logger = LoggerFactory.getLogger(SquadToScaleMigrator.class);
     private static final List<String> IGNORABLE_SQUAD_STATUSES = List.of("PASS", "FAIL", "WIP", "BLOCKED", "UNEXECUTED");
 
+    private static final int SCALE_DEFECT_DEFAULT_TYPE = 3;
     private final MigrationConfiguration config;
     private final JiraApi jiraApi;
     private final ScaleApi scaleApi;
@@ -384,6 +385,7 @@ public class SquadToScaleMigrator {
 
             for (var execution : executions) {
 
+                SquadToScaleExecutionStepMap executionStepMap = new SquadToScaleExecutionStepMap();
                 var scaleCycleKey = scaleCycleService.getCycleKeyBySquadCycleName(execution.cycleName(),
                         projectKey, execution.versionName());
 
@@ -418,12 +420,23 @@ public class SquadToScaleMigrator {
                            var scaleTestScriptResults = scaleTestScriptResultsMap.get(index);
                            var squadExecutionStep = new SquadToScaleExecutionStepMap.SquadExecutionStepMapKey(executionStepRespone.id(), execution.id(), executionStepRespone.attachmentCount(), executionStepRespone.defects());
                            var scaleExecutionStep = new SquadToScaleExecutionStepMap.ScaleExecutionStepMapValue(scaleTestScriptResults.id(), scaleTestExecutionCreatedPayload.id());
-                           squadToScaleExecutionStepMap.put(squadExecutionStep, scaleExecutionStep);
+                           executionStepMap.put(squadExecutionStep, scaleExecutionStep);
                            index++;
                         }
                     }
                 }
+                if(executionStepMap != null && executionStepMap.size() > 0){
+                    var stepResultsHasDefects = executionStepMap.getExecutionStepMapHasDefects();
+                    if(stepResultsHasDefects.size() > 0){
+                        List<ScaleExecutionStepDefectsPayload> defectsPayloads = new LinkedList<>();
+                        for(var scriptResultEntry:stepResultsHasDefects){
+                            defectsPayloads.addAll(createScaleStepResultDefects(scriptResultEntry.getKey(), scriptResultEntry.getValue()));
 
+                        }
+                        scaleApi.updateTestStepdefects(defectsPayloads);
+                    }
+                }
+                squadToScaleExecutionStepMap.putAll(executionStepMap);
             }
 
             return testExecutionMap;
@@ -431,6 +444,23 @@ public class SquadToScaleMigrator {
             logger.error("Failed to create test executions for Scale test case. " + exception.getMessage(), exception);
             throw new RuntimeException(exception);
         }
+    }
+
+    private List<ScaleExecutionStepDefectsPayload> createScaleStepResultDefects(SquadToScaleExecutionStepMap.SquadExecutionStepMapKey squadExecutionStepMapKey,
+                                                                                SquadToScaleExecutionStepMap.ScaleExecutionStepMapValue scaleExecutionStepMapValue) throws IOException {
+        List<ScaleExecutionStepDefectsPayload> defectsPayloads = new LinkedList<>();
+        for(String defect:squadExecutionStepMapKey.defects()){
+            try {
+                var jiraIssueResponse = jiraApi.getIssueByIssueKey(defect);
+                String issueId = jiraIssueResponse.id();
+                int testScriptResultId = scaleExecutionStepMapValue.testScriptResultId();
+                int testresultId = Integer.parseInt(scaleExecutionStepMapValue.testResultId());
+                defectsPayloads.add(new ScaleExecutionStepDefectsPayload(testresultId, testScriptResultId, SCALE_DEFECT_DEFAULT_TYPE, issueId));
+            }catch (Exception e){
+                logger.error("Unable to create defect for step result with defect key: "+defect);
+            }
+        }
+        return defectsPayloads;
     }
 
     //clearing per project caches to avoid heavy memory usage and conflicts

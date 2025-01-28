@@ -28,6 +28,7 @@ public class ScaleApi extends BaseApi {
     public static final String FETCH_SCALE_TEST_RESULTS_ENDPOINT = "/rest/tests/1.0/testresult/%s?fields=id,key,testScriptResults";
     public static final String FETCH_SCALE_RESULTS_STATUSES = "/rest/tests/1.0/testresultstatus?projectId=%s";
     public static final String CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT = "/rest/tests/1.0/testresultstatus";
+    public static final String CREATE_SCALE_TEST_SCRIPT_RESULT_DEFECT_ENDPOINT = "/rest/tests/1.0/tracelink/testresult/bulk/create";
     public static final String CUSTOM_FIELD_DUPLICATED_EXPECTED_MESSAGE = "Custom field name is duplicated";
 
     public ScaleApi(ApiConfiguration config) {
@@ -35,7 +36,6 @@ public class ScaleApi extends BaseApi {
     }
 
     public String createTestCases(ScaleTestCaseCreationPayload testCaseCreationPayload) throws ZephyrApiException {
-
         String response = "";
         Map<String, Object> result = new HashMap<>();
         try {
@@ -59,6 +59,14 @@ public class ScaleApi extends BaseApi {
             sendHttpPut(String.format(SCALE_TEST_STEP_ENDPOINT, key), step);
         } catch (ApiException e) {
             ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP, key), e);
+        }
+    }
+
+    public void updateTestStepdefects(List<ScaleExecutionStepDefectsPayload> step) throws ZephyrApiException {
+        try {
+            sendHttpPost(String.format(CREATE_SCALE_TEST_SCRIPT_RESULT_DEFECT_ENDPOINT), step);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP_DEFECT), e);
         }
     }
 
@@ -211,6 +219,8 @@ public class ScaleApi extends BaseApi {
 
         public static final String ERROR_CREATE_TEST_STEP = "Error while creating Test Steps at " +
                 SCALE_TEST_STEP_ENDPOINT;
+
+        public static final String ERROR_CREATE_TEST_STEP_DEFECT = "Error while creating step results defects.";
 
         public static final String ERROR_FETCHING_TEST_STEP = "Error while fetching Test Steps at " +
                 SCALE_TEST_STEP_ENDPOINT;
