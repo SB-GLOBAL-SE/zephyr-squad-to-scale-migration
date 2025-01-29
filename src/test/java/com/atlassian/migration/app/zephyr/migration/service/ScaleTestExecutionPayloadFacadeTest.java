@@ -47,6 +47,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 "html_content",
                 "executed",
+                "executedBy",
                 "assignee",
                 "assignee",
                 "assignee",
@@ -57,7 +58,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
                 scaleTestCaseKeyMock,
-                "author",
+                "executedBy",
+                "assignee",
                 "html_content",
                 "version",
                 List.of("issueKey"),
@@ -71,19 +73,20 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 )
         );
 
-        var createdByUserMock = new AssignableUserResponse(
-                "key", "author", "email", "author"
-        );
 
         var assigneeUserMock = new AssignableUserResponse(
-                "key", "assignee", "email", "assignee");
+                "assignee", "assignee", "email", "assignee");
+
+        var executedByUserMock = new AssignableUserResponse(
+                "executedBy", "executedBy", "email", "executedBy");
 
         var testExecutionStepResponseMock = new FetchSquadExecutionStepParsedResponse(List.of(new SquadExecutionStepParsedResponse(1, 0, new SquadExecutionTypeResponse(1, "status"), "comment", 0,null)));
-        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("author", testKeyMock))
-                .thenReturn(List.of(createdByUserMock));
 
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("assignee", testKeyMock))
                 .thenReturn(List.of(assigneeUserMock));
+
+        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
+                .thenReturn(List.of(executedByUserMock));
 
 
         var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
@@ -103,6 +106,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 "html_content",
                 "executed",
+                "executedBy",
                 "assignee",
                 "assignee",
                 "assignee",
@@ -119,6 +123,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 "html_content",
                 "executed",
+                "executedBy",
                 "assignee",
                 "assignee",
                 "assignee",
@@ -129,7 +134,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var expectedScaleExecutionPayloadWip = new ScaleExecutionCreationPayload(
                 "In Progress",
                 scaleTestCaseKeyMock,
-                "author",
+                "executedBy",
+                "assignee",
                 "html_content",
                 "version",
                 List.of("issueKey"),
@@ -146,7 +152,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var expectedScaleExecutionPayloadUnexecuted = new ScaleExecutionCreationPayload(
                 "Not Executed",
                 scaleTestCaseKeyMock,
-                "author",
+                "executedBy",
+                "assignee",
                 "html_content",
                 "version",
                 List.of("issueKey"),
@@ -160,20 +167,19 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 )
         );
 
-        var createdByUserMock = new AssignableUserResponse(
-                "key", "author", "email", "author"
-        );
-
         var assigneeUserMock = new AssignableUserResponse(
-                "key", "assignee", "email", "assignee");
+                "assignee", "assignee", "email", "assignee");
+
+        var executedUserMock = new AssignableUserResponse(
+                "executedBy", "executedBy", "email", "executedBy");
 
         var testExecutionStepResponseMock = new FetchSquadExecutionStepParsedResponse(List.of(new SquadExecutionStepParsedResponse(1, 0, new SquadExecutionTypeResponse(1, "status"), "comment", 1,null)));
 
-        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("author", testKeyMock))
-                .thenReturn(List.of(createdByUserMock));
-
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("assignee", testKeyMock))
                 .thenReturn(List.of(assigneeUserMock));
+
+        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
+                .thenReturn(List.of(executedUserMock));
 
         var receivedPayloadWip = sutTestExecFacade
                 .buildPayload(squadExecutionPayloadWipMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
@@ -199,6 +205,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "unscheduled",
                 "html_content",
                 "executed",
+                "executedBy",
                 "assignee",
                 "assignee",
                 "assignee",
@@ -209,7 +216,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
                 scaleTestCaseKeyMock,
-                "author",
+                "executedBy",
+                "assignee",
                 "html_content",
                 null,
                 List.of("issueKey"),
@@ -223,20 +231,18 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 )
         );
 
-        var createdByUserMock = new AssignableUserResponse(
-                "key", "author", "email", "author"
-        );
-
         var assigneeUserMock = new AssignableUserResponse(
-                "key", "assignee", "email", "assignee");
+                "assignee", "assignee", "email", "assignee");
+        var executedUserMock = new AssignableUserResponse(
+                "executedBy", "executedBy", "email", "assignee");
 
         var testExecutionStepResponseMock = new FetchSquadExecutionStepParsedResponse(List.of(new SquadExecutionStepParsedResponse(1, 0, new SquadExecutionTypeResponse(1, "status"), "comment", 0, null)));
 
-        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("author", testKeyMock))
-                .thenReturn(List.of(createdByUserMock));
-
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("assignee", testKeyMock))
                 .thenReturn(List.of(assigneeUserMock));
+
+        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
+                .thenReturn(List.of(executedUserMock));
 
         var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
 
@@ -255,6 +261,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 "html_content",
                 "executed",
+                "executedBy",
                 null,
                 "",
                 "unassignable",
@@ -265,7 +272,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
                 scaleTestCaseKeyMock,
-                "author",
+                "executedBy",
+                null,
                 "html_content",
                 "version",
                 List.of("issueKey"),
@@ -279,14 +287,14 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 )
         );
 
-        var createdByUserMock = new AssignableUserResponse(
-                "key", "author", "email", "author"
+        var executedByUserMock = new AssignableUserResponse(
+                "executedBy", "executedBy", "email", "executedBy"
         );
 
         var testExecutionStepResponseMock = new FetchSquadExecutionStepParsedResponse(List.of(new SquadExecutionStepParsedResponse(1, 0, new SquadExecutionTypeResponse(1, "status"), "comment", 0, null)));
 
-        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("author", testKeyMock))
-                .thenReturn(List.of(createdByUserMock));
+        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
+                .thenReturn(List.of(executedByUserMock));
 
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("unassignable", testKeyMock))
                 .thenReturn(Collections.emptyList());
@@ -308,6 +316,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 "html_content",
                 "executed",
+                "executedBy",
                 "assignee",
                 "assignee (Inactive)",
                 "unassignable",
@@ -318,7 +327,8 @@ public class ScaleTestExecutionPayloadFacadeTest {
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
                 scaleTestCaseKeyMock,
-                "author",
+                "executedBy",
+                null,
                 "html_content",
                 "version",
                 List.of("issueKey"),
@@ -332,14 +342,14 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 )
         );
 
-        var createdByUserMock = new AssignableUserResponse(
-                "key", "author", "email", "author"
+        var executedByUserMock = new AssignableUserResponse(
+                "executedBy", "executedBy", "email", "executedBy"
         );
 
         var testExecutionStepResponseMock = new FetchSquadExecutionStepParsedResponse(List.of(new SquadExecutionStepParsedResponse(1, 0, new SquadExecutionTypeResponse(1, "status"), "comment", 0, null)));
 
-        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("author", testKeyMock))
-                .thenReturn(List.of(createdByUserMock));
+        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
+                .thenReturn(List.of(executedByUserMock));
 
         var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
 
@@ -359,6 +369,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 "html_content",
                 "executed",
+                "executedBy",
                 "assignee",
                 "assignee",
                 "assignee",
@@ -366,32 +377,31 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "folder",
                 List.of(new SquadExecutionDefectResponse("issueKey")));
 
-        var createdByUserMock = new AssignableUserResponse(
-                "key", "author", "email", "author"
-        );
-
         var assigneeUserMock = new AssignableUserResponse(
-                "key", "assignee", "email", "assignee");
+                "assignee", "assignee", "email", "assignee");
+
+        var executedUserMock = new AssignableUserResponse(
+                "executedBy", "executedBy", "email", "assignee");
 
         var testExecutionStepResponseMock = new FetchSquadExecutionStepParsedResponse(List.of(new SquadExecutionStepParsedResponse(1, 0, new SquadExecutionTypeResponse(1, "status"), "comment", 0,null)));
-
-        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("author", testKeyMock))
-                .thenReturn(List.of(createdByUserMock));
 
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("assignee", testKeyMock))
                 .thenReturn(List.of(assigneeUserMock));
 
-        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
+                .thenReturn(List.of(executedUserMock));
 
         sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
 
-        verify(jiraApiMock, times(2))
+        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+
+        verify(jiraApiMock, times(6))
                 .fetchAssignableUserByUsernameAndProject(any(), any());
 
-        verify(jiraApiMock, times(1))
-                .fetchAssignableUserByUsernameAndProject("author", testKeyMock);
+        verify(jiraApiMock, times(3))
+                .fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock);
 
-        verify(jiraApiMock, times(1))
+        verify(jiraApiMock, times(3))
                 .fetchAssignableUserByUsernameAndProject("assignee", testKeyMock);
     }
 
@@ -407,6 +417,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 "html_content",
                 "executed",
+                "executedBy",
                 "assignee",
                 "assignee",
                 "assignee",
@@ -414,16 +425,12 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "folder",
                 List.of(new SquadExecutionDefectResponse("issueKey")));
 
-        var createdByUserMock = new AssignableUserResponse(
-                "key", "author", "email", "author"
-        );
-
         var testExecutionStepResponseMock = new FetchSquadExecutionStepParsedResponse(List.of(new SquadExecutionStepParsedResponse(1, 0, new SquadExecutionTypeResponse(1, "status"), "comment", 0,null)));
 
-        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("author", testKeyMock))
-                .thenReturn(List.of(createdByUserMock));
-
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("assignee", testKeyMock))
+                .thenReturn(Collections.emptyList());
+
+        when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
                 .thenReturn(Collections.emptyList());
 
         sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
@@ -434,10 +441,10 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 .fetchAssignableUserByUsernameAndProject(any(), any());
 
         verify(jiraApiMock, times(1))
-                .fetchAssignableUserByUsernameAndProject("author", testKeyMock);
+                .fetchAssignableUserByUsernameAndProject("assignee", testKeyMock);
 
         verify(jiraApiMock, times(1))
-                .fetchAssignableUserByUsernameAndProject("assignee", testKeyMock);
+                .fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock);
     }
 
 

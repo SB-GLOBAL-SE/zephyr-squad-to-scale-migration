@@ -83,6 +83,7 @@ public class SquadApi extends BaseApi {
                         e.versionName(),
                         e.htmlComment(),
                         e.executedOn(),
+                        e.executedBy(),
                         e.assignedTo(),
                         e.assignedToDisplay(),
                         e.assignedToUserName(),

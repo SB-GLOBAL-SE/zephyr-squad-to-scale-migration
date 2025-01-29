@@ -47,8 +47,11 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
     public ScaleExecutionCreationPayload buildPayload(
             SquadExecutionItemParsedResponse executionData, String scaleTestCaseKey, String projectKey, FetchSquadExecutionStepParsedResponse testExectuionStepResponse) throws IOException {
 
-        var executedByValidation = validateAssignedUser(executionData.createdByUserName(), projectKey);
+        var executedByValidation = validateAssignedUser(executionData.executedBy() == null ? null:executionData.executedBy().toString(), projectKey);
         var assignedToValidation = validateAssignedUser(executionData.assignedToOrStr().toString(), projectKey);
+
+        var executedUserKey = executedByValidation ? getAssignableUserKey(executionData.executedBy().toString(), projectKey): null;
+        var assigneeUserKey = getAssignableUserKey(executionData.assignedToOrStr().toString(), projectKey);
 
         List<String> defects = new ArrayList<String>();
         if(executionData.defects() != null && executionData.defects().size() > 0){
@@ -73,7 +76,8 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
         return new ScaleExecutionCreationPayload(
                 translateSquadToScaleExecStatus(executionData.status().name()),
                 scaleTestCaseKey,
-                executedByValidation ? executionData.createdBy() : null,
+                executedByValidation ? executedUserKey : null,
+                assignedToValidation ? assigneeUserKey : null,
                 executionData.htmlComment(),
                 translateSquadToScaleVersion(executionData.versionName()),
                 defects,
@@ -87,6 +91,35 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
         );
     }
 
+    private String getAssignableUserKey(String assignedUsername, String projectKey){
+        try{
+            if (assignedUsername == null
+                    || assignedUsername.isBlank()
+                    || unassignableUsers.contains(assignedUsername)) {
+                return null;
+            }
+
+            var fetchedAssignableUsers = jiraApi.fetchAssignableUserByUsernameAndProject(assignedUsername,
+                    projectKey);
+
+            if (fetchedAssignableUsers.isEmpty()) {
+                unassignableUsers.add(assignedUsername);
+                return null;
+            }
+
+            var assignableUser = fetchedAssignableUsers.stream().filter(user -> isSameUser(user, assignedUsername)).toList();
+
+            if (assignableUser.size() > 1) {
+                return null;
+            }
+            return assignableUser.get(0).key();
+
+
+        }catch(Exception e){
+
+        }
+        return null;
+    }
     private Boolean validateAssignedUser(String assignedUsername, String projectKey) throws IOException {
         if (assignedUsername == null
                 || assignedUsername.isBlank()

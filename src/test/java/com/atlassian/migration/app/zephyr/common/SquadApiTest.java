@@ -201,6 +201,7 @@ public class SquadApiTest {
                             "cycle",
                             "folder",
                             "executed",
+                            "executedBy",
                             "assignee",
                             "assignee",
                             "assignee",
@@ -227,6 +228,7 @@ public class SquadApiTest {
                                     "version",
                                     "html_content",
                                     "executed",
+                                    "executedBy",
                                     "assignee",
                                     "assignee",
                                     "assignee",
@@ -259,6 +261,7 @@ public class SquadApiTest {
                             null,
                             null,
                             null,
+                            null,
                             List.of(new SquadExecutionDefectResponse("issueKey"))));
 
             var fetchSquadExecutionResponseMock = new FetchSquadExecutionResponse(statusMap, "10100",
@@ -282,6 +285,7 @@ public class SquadApiTest {
                                     "author",
                                     "version",
                                     "html_content",
+                                    null,
                                     null,
                                     null,
                                     null,

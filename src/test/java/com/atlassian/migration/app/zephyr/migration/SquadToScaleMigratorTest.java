@@ -66,7 +66,7 @@ class SquadToScaleMigratorTest {
                 "attachments_mapped.csv",
                 "test_cases_Mapped.csv",
                 "test_executions_Mapped.csv",
-                "postgres",
+                "postgresql",
                 "/home/ubuntu"));
 
         migratorSpy = spy(new SquadToScaleMigrator(jiraApiMock, squadApiMock, scaleApiMock, attachmentsMigratorMock,
@@ -223,17 +223,17 @@ class SquadToScaleMigratorTest {
             var executionsMock = List.of(
                     new SquadExecutionItemParsedResponse("1",
                             statusMock, "createdOn",null, null,
-                            "versionName", "comment", "executedOn",
+                            "versionName", "comment", "executedOn", "executedBy",
                             "assignedTo", "assignedTo", "assigneeTo", "CYCLE-1", "folder",
                             List.of(new SquadExecutionDefectResponse("issueKey"))),
                     new SquadExecutionItemParsedResponse("2",
                             statusMock, "createdOn", null, null,
-                            "versionName", "comment", "executedOn",
+                            "versionName", "comment", "executedOn", "executedBy",
                             "assignedTo", "assignedTo", "assigneeTo", "CYCLE-2", "folder",
                             List.of(new SquadExecutionDefectResponse("issueKey"))),
                     new SquadExecutionItemParsedResponse("3",
                             statusMock, "createdOn", null, null,
-                            "versionName", "comment", "executedOn",
+                            "versionName", "comment", "executedOn", "executedBy",
                             "assignedTo", "assignedTo", "assigneeTo", "CYCLE-3", "folder",
                             List.of(new SquadExecutionDefectResponse("issueKey")))
             );

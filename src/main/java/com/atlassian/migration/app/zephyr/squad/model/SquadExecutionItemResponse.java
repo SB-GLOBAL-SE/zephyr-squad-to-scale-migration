@@ -13,6 +13,7 @@ public record SquadExecutionItemResponse(
         String cycleName,
         String folderName,
         String executedOn,
+        String executedBy,
         String assignedTo,
         String assignedToDisplay,
         String assignedToUserName,
