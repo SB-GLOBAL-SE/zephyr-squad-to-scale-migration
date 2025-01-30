@@ -213,7 +213,7 @@ public class ScaleApiTest {
 
 
         private final ScaleExecutionCreationPayload scaleExecToCreate = new ScaleExecutionCreationPayload(
-                "status", "TEST-1", "user", "assignee", "comment", "1.0", List.of("issuekey"),
+                "status", "TEST-1", "user", "executionDate","assignee", "comment", "1.0", List.of("issuekey"),
                 List.of(new ScaleExecutionStepPayload(0, "status", "comment")), null);
 
         private final List<ScaleExecutionCreationPayload> testResultsToCreate = List.of(scaleExecToCreate);

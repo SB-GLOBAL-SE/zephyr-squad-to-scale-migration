@@ -6,6 +6,7 @@ public record ScaleExecutionCreationPayload(
         String status,
         String testCaseKey,
         Object executedBy,
+        Object executionDate,
         Object assignedTo,
         Object comment,
         String version,

@@ -223,17 +223,17 @@ class SquadToScaleMigratorTest {
             var executionsMock = List.of(
                     new SquadExecutionItemParsedResponse("1",
                             statusMock, "createdOn",null, null,
-                            "versionName", "comment", "executedOn", "executedBy",
+                            "versionName", "comment", null, "executedBy",
                             "assignedTo", "assignedTo", "assigneeTo", "CYCLE-1", "folder",
                             List.of(new SquadExecutionDefectResponse("issueKey"))),
                     new SquadExecutionItemParsedResponse("2",
                             statusMock, "createdOn", null, null,
-                            "versionName", "comment", "executedOn", "executedBy",
+                            "versionName", "comment", null, "executedBy",
                             "assignedTo", "assignedTo", "assigneeTo", "CYCLE-2", "folder",
                             List.of(new SquadExecutionDefectResponse("issueKey"))),
                     new SquadExecutionItemParsedResponse("3",
                             statusMock, "createdOn", null, null,
-                            "versionName", "comment", "executedOn", "executedBy",
+                            "versionName", "comment", null, "executedBy",
                             "assignedTo", "assignedTo", "assigneeTo", "CYCLE-3", "folder",
                             List.of(new SquadExecutionDefectResponse("issueKey")))
             );

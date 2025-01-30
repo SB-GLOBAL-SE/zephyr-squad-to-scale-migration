@@ -1,6 +1,7 @@
 package com.atlassian.migration.app.zephyr.migration.service;
 
 import com.atlassian.migration.app.zephyr.common.ApiException;
+import com.atlassian.migration.app.zephyr.common.TimeUtils;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.AssignableUserResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionCreationPayload;
@@ -77,6 +78,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
                 translateSquadToScaleExecStatus(executionData.status().name()),
                 scaleTestCaseKey,
                 executedByValidation ? executedUserKey : null,
+                executionData.executedOn() != null ? TimeUtils.getUTCTimestampforSquadDate(executionData.executedOn().toString()) : null,
                 assignedToValidation ? assigneeUserKey : null,
                 executionData.htmlComment(),
                 translateSquadToScaleVersion(executionData.versionName()),
