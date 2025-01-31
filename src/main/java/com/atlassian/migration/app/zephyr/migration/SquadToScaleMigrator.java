@@ -109,14 +109,33 @@ public class SquadToScaleMigrator {
 
             var startAt = 0;
             long startTimeMillis = System.currentTimeMillis();
+
+            SquadToScaleTestCaseMap testCaseMap = new SquadToScaleTestCaseMap();
+            SquadToScaleTestStepMap testStepMap = new SquadToScaleTestStepMap();
+            SquadToScaleTestExecutionMap testExecutionMap = new SquadToScaleTestExecutionMap();
+            SquadToScaleExecutionStepMap executionStepMap = new SquadToScaleExecutionStepMap();
+            SquadToScaleEntitiesMap squadToScaleEntitiesMap = new SquadToScaleEntitiesMap(testCaseMap, testStepMap, testExecutionMap, executionStepMap);
+
             while (startAt < total) {
                 logger.info("Issue progress: "
                         + ProgressBarUtil.getProgressBar(startAt, total, startTimeMillis));
 
-                processPage(startAt, projectKey);
+                processPage(startAt, projectKey, squadToScaleEntitiesMap);
 
                 startAt += config.pageSteps();
+            }
 
+            logger.info("Post migrion steps started, attachments copy and export of mappings.");
+            attachmentsMigrator.export(squadToScaleEntitiesMap, projectKey);
+            testCasePostMigrator.export(squadToScaleEntitiesMap, projectKey);
+            testExecutionPostMigrator.export(squadToScaleEntitiesMap, projectKey);
+
+            if(config.updateDatabaseFieldsPostMigration()) {
+                var dataSourceFactory = new DataSourceFactory();
+                var dataSource = dataSourceFactory.createDataSourceFromDatabaseName(config.databaseType());
+                DatabasePostRepository databasePostRepository = new DatabasePostRepository(dataSource, config.testCaseCSVFile(), config.testExecutionCSVFile());
+                databasePostRepository.updateTestCaseFields();
+                databasePostRepository.updateTestResultsFields();
             }
             logger.info("Issue progress: "
                     + ProgressBarUtil.getProgressBar(total, total, startTimeMillis));
@@ -126,7 +145,7 @@ public class SquadToScaleMigrator {
         }
     }
 
-    private void processPage(int startAt, String projectKey) {
+    private void processPage(int startAt, String projectKey, SquadToScaleEntitiesMap squadToScaleEntitiesMap) {
         try {
 
             logger.info("Fetching issues starting at " + startAt + "...");
@@ -139,20 +158,8 @@ public class SquadToScaleMigrator {
             logger.info("Fetched " + issues.size() + " issues.");
 
             var testCaseMap = createScaleTestCases(issues, projectKey);
-            var squadToScaleEntitiesMap = updateStepsAndPostExecution(testCaseMap, projectKey);
-
-            attachmentsMigrator.export(squadToScaleEntitiesMap, projectKey);
-            testCasePostMigrator.export(squadToScaleEntitiesMap, projectKey);
-            testExecutionPostMigrator.export(squadToScaleEntitiesMap, projectKey);
-
-            if(config.updateDatabaseFieldsPostMigration()) {
-                var dataSourceFactory = new DataSourceFactory();
-                var dataSource = dataSourceFactory.createDataSourceFromDatabaseName(config.databaseType());
-                DatabasePostRepository databasePostRepository = new DatabasePostRepository(dataSource, config.testCaseCSVFile(), config.testExecutionCSVFile());
-                databasePostRepository.updateTestCaseFields();
-                databasePostRepository.updateTestResultsFields();
-            }
-
+            updateStepsAndPostExecution(testCaseMap, projectKey, squadToScaleEntitiesMap);
+            squadToScaleEntitiesMap.testCaseMap().putAll(testCaseMap);
         } catch (IOException exception) {
             logger.error("Failed to process page with start at: " + startAt + " " + exception.getMessage(), exception);
             throw new RuntimeException(exception);
@@ -314,8 +321,8 @@ public class SquadToScaleMigrator {
         }
     }
 
-    private SquadToScaleEntitiesMap updateStepsAndPostExecution(SquadToScaleTestCaseMap
-                                                                        testCaseMap, String projectKey) throws IOException {
+    private void updateStepsAndPostExecution(SquadToScaleTestCaseMap
+                                                                        testCaseMap, String projectKey, SquadToScaleEntitiesMap squadToScaleEntitiesMap) throws IOException {
         try {
             var orderedIssueList = testCaseMap.getListOfAllEntriesOrdered();
 
@@ -331,8 +338,10 @@ public class SquadToScaleMigrator {
             }
 
             logger.info("Updated steps and created test executions for " + orderedIssueList.size() + " issues.");
-//            var defectStepMap = squadToScaleExecutionStepMap.getExecutionStepMapHasDefects();
-            return new SquadToScaleEntitiesMap(testCaseMap, testStepMap, testExecutionMap, squadToScaleExecutionStepMap);
+            squadToScaleEntitiesMap.testStepMap().putAll(testStepMap);
+            squadToScaleEntitiesMap.testExecutionMap().putAll(testExecutionMap);
+            squadToScaleEntitiesMap.executionStepMap().putAll(squadToScaleExecutionStepMap);
+
         } catch (IOException exception) {
             logger.error("Failed to update steps and post execution " + exception.getMessage(), exception);
             throw new RuntimeException(exception);

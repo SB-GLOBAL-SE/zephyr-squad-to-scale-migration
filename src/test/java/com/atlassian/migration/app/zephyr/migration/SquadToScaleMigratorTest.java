@@ -153,7 +153,7 @@ class SquadToScaleMigratorTest {
             migratorSpy.runMigration("PROJECT-1");
 
             //We are using a public method to count interactions. Each processPage calls attachments export once
-            verify(attachmentsMigratorMock, times(interactionsExpected)).export(any(), any());
+            verify(attachmentsMigratorMock, times(1)).export(any(), any());
 
         }
     }
