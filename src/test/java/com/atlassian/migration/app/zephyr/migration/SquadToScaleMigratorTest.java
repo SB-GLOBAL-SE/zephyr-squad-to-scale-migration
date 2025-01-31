@@ -67,6 +67,7 @@ class SquadToScaleMigratorTest {
                 "test_cases_Mapped.csv",
                 "test_executions_Mapped.csv",
                 "postgresql",
+                false,
                 "/home/ubuntu"));
 
         migratorSpy = spy(new SquadToScaleMigrator(jiraApiMock, squadApiMock, scaleApiMock, attachmentsMigratorMock,

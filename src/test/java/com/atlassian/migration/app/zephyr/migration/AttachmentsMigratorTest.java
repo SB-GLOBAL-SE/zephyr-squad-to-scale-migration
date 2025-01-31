@@ -105,20 +105,10 @@ class AttachmentsMigratorTest {
                 new SquadToScaleTestStepMap.TestStepMapKey("1", "1"), Collections.emptyList()
         ));
 
-        testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("1", "created By", "created On", "modifiedBy", "modifiedOn"), "EXEC-1"
-        );
-        testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("2", "created By", "created On", "modifiedBy", "modifiedOn"), "EXEC-2"
-        );
-        testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("3", "created By", "created On", "modifiedBy", "modifiedOn"), "EXEC-3"
-        );
-
         squadToScaleEntitiesMapMock = new SquadToScaleEntitiesMap(
                 new SquadToScaleTestCaseMap(),
                 testStepMap,
-                testExecMap,
+                new SquadToScaleTestExecutionMap(),
                 new SquadToScaleExecutionStepMap());
 
         when(jiraApiMock.getProjectByKeyWithHistoricalKeys(projectKey)).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList()));
@@ -132,14 +122,6 @@ class AttachmentsMigratorTest {
         var scaleGETStepsPayloadMock = new ScaleGETStepsPayload("KEY-1", "PROJECT", stepItemPayloadMock);
 
         when(scaleApiMock.fetchTestStepsFromTestCaseKey(any())).thenReturn(scaleGETStepsPayloadMock);
-
-        squadAttachmentsMockList.addAll(List.of(
-                squadAttachmentItemResponseMock,
-                squadAttachmentItemResponseMock
-        ));
-
-        when(squadApiMock.fetchTestExecutionAttachmentById(any())).thenReturn(new FetchSquadAttachmentResponse(squadAttachmentsMockList));
-
 
         doNothing().when(attachmentsCsvExporterMock).dump(any(), any(), any());
     }

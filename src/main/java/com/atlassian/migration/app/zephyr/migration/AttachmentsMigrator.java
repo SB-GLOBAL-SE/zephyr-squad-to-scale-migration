@@ -2,6 +2,7 @@ package com.atlassian.migration.app.zephyr.migration;
 
 import com.atlassian.migration.app.zephyr.common.ApiException;
 import com.atlassian.migration.app.zephyr.common.ProgressBarUtil;
+import com.atlassian.migration.app.zephyr.common.TimeUtils;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.migration.model.*;
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
@@ -9,7 +10,9 @@ import com.atlassian.migration.app.zephyr.scale.database.ScaleTestCaseRepository
 import com.atlassian.migration.app.zephyr.scale.model.GetProjectResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleGETStepItemPayload;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
+import com.atlassian.migration.app.zephyr.squad.database.SquadDatabaseRepository;
 import com.atlassian.migration.app.zephyr.squad.model.FetchSquadAttachmentResponse;
+import com.atlassian.migration.app.zephyr.squad.model.SquadAttachmentEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -48,7 +51,8 @@ public class AttachmentsMigrator {
             "CreatedOn", "MimeType", "TestCaseId", "StepId", "TestResultId", "TestScriptResultId"};
 
     public AttachmentsMigrator(JiraApi jiraApi, ScaleApi scaleApi, SquadApi squadApi,
-                               DriverManagerDataSource dataSource, AttachmentsCsvExporter attachmentsCsvExporter, AttachmentsCopier attachmentsCopier) {
+                               DriverManagerDataSource dataSource,
+                               AttachmentsCsvExporter attachmentsCsvExporter, AttachmentsCopier attachmentsCopier) {
 
         this.jiraApi = jiraApi;
         this.scaleApi = scaleApi;
@@ -56,6 +60,7 @@ public class AttachmentsMigrator {
         this.attachmentsCsvExporter = attachmentsCsvExporter;
         this.dataSource = dataSource;
         this.attachmentsCopier = attachmentsCopier;
+
 
     }
 
@@ -212,6 +217,7 @@ public class AttachmentsMigrator {
 
         List<AttachmentAssociationData> attachmentsMapped = new ArrayList<>();
 
+        SquadDatabaseRepository squadDatabaseRepository = new SquadDatabaseRepository(dataSource);
         var startTimeMillis = System.currentTimeMillis();
         var testStepIndex = 0;
         var testStepEntrySet = testStepMap.entrySet();
@@ -229,19 +235,25 @@ public class AttachmentsMigrator {
                     step -> Integer.valueOf(step.index()), ScaleGETStepItemPayload::id));
 
             for (var attachmentsPerOrder : testStepMapped.getValue().entrySet()) {
-
-                attachmentsMapped.addAll(attachmentsPerOrder.getValue().stream().map(
-                        attachment -> AttachmentAssociationData.createAttachmentAssociationDataFromTestStep(
-                                attachment.fileName(),
-                                attachment.fileId(),
-                                null,
-                                attachment.fileSize(),
-                                attachment.author(),
-                                attachment.dateCreated(),
-                                projectId,
-                                scaleStepData.get(Integer.parseInt(attachmentsPerOrder.getKey().stepOrder()) - 1),
-                                new SquadOriginEntity(attachmentsPerOrder.getKey().stepId(), ""))).toList());
-
+                for(var attachment:attachmentsPerOrder.getValue()){
+                    String dateCreated = attachment.dateCreated();
+                    var squadAttachmentEntity = squadDatabaseRepository.getByID(attachment.fileId());
+                    if (!squadAttachmentEntity.isEmpty()) {
+                        dateCreated = TimeUtils.getUTCTimestampforAttachmentDateCreated(squadAttachmentEntity.get().dateCreated());
+                    }else{
+                        dateCreated = TimeUtils.getUTCTImestampforSquadAttachment(dateCreated);
+                    }
+                    attachmentsMapped.add(AttachmentAssociationData.createAttachmentAssociationDataFromTestStep(
+                            attachment.fileName(),
+                            attachment.fileId(),
+                            null,
+                            attachment.fileSize(),
+                            attachment.author(),
+                            dateCreated,
+                            projectId,
+                            scaleStepData.get(Integer.parseInt(attachmentsPerOrder.getKey().stepOrder()) - 1),
+                            new SquadOriginEntity(attachmentsPerOrder.getKey().stepId(), "")));
+                }
             }
         }
 
@@ -259,6 +271,7 @@ public class AttachmentsMigrator {
         var testExecutionIndex = 0;
         var testExecutionEntrySet = testExecutionMap.entrySet();
         List<AttachmentAssociationData> attachmentsMapped = new ArrayList<>();
+        SquadDatabaseRepository squadDatabaseRepository = new SquadDatabaseRepository(dataSource);
 
         for (var testExecutionMapped : testExecutionEntrySet) {
 
@@ -269,17 +282,26 @@ public class AttachmentsMigrator {
 
             FetchSquadAttachmentResponse testExecAttachments = squadApi.fetchTestExecutionAttachmentById(testExecutionMapped.getKey().testExecutionId());
 
-            attachmentsMapped.addAll(testExecAttachments.data().stream().map(
-                    attachment -> AttachmentAssociationData.createAttachmentAssociationDataFromTestExecution(
-                            attachment.fileName(),
-                            attachment.fileId(),
-                            null,
-                            attachment.fileSize(),
-                            attachment.author(),
-                            attachment.dateCreated(),
-                            projectId,
-                            testExecutionMapped.getValue(),
-                            new SquadOriginEntity(testExecutionMapped.getKey().testExecutionId(), ""))).toList());
+            for(var attachment:testExecAttachments.data()){
+                String created = attachment.dateCreated();
+                var squadAttachmentEntity = squadDatabaseRepository.getByID(attachment.fileId());
+                if (!squadAttachmentEntity.isEmpty()) {
+                    created = TimeUtils.getUTCTimestampforAttachmentDateCreated(squadAttachmentEntity.get().dateCreated());
+                }else{
+                    created = TimeUtils.getUTCTImestampforSquadAttachment(created);
+                }
+
+                attachmentsMapped.add(AttachmentAssociationData.createAttachmentAssociationDataFromTestExecution(
+                        attachment.fileName(),
+                        attachment.fileId(),
+                        null,
+                        attachment.fileSize(),
+                        attachment.author(),
+                        created,
+                        projectId,
+                        testExecutionMapped.getValue(),
+                        new SquadOriginEntity(testExecutionMapped.getKey().testExecutionId(), "")));
+            }
         }
 
         logger.info("Test Executions attachments progress: "
@@ -296,6 +318,7 @@ public class AttachmentsMigrator {
         var executionStepIndex = 0;
         var attachmentExectuionStepMap = squadToScaleExecutionStepMap.getExecutionStepMapHasAttachments();
 
+        SquadDatabaseRepository squadDatabaseRepository = new SquadDatabaseRepository(dataSource);
         List<AttachmentAssociationData> attachmentsMapped = new ArrayList<>();
 
         for (var testExecutionMapped : attachmentExectuionStepMap) {
@@ -306,18 +329,25 @@ public class AttachmentsMigrator {
             }
 
             FetchSquadAttachmentResponse testExecAttachments = squadApi.fetchExecutionStepAttachmentById(testExecutionMapped.getKey().executionStepId()+"");
-
-            attachmentsMapped.addAll(testExecAttachments.data().stream().map(
-                    attachment -> AttachmentAssociationData.createAttachmentAssociationDataFromExecutionStep(
-                            attachment.fileName(),
-                            attachment.fileId(),
-                            null,
-                            attachment.fileSize(),
-                            attachment.author(),
-                            attachment.dateCreated(),
-                            projectId,
-                            testExecutionMapped.getValue().testScriptResultId()+"",
-                            new SquadOriginEntity(testExecutionMapped.getKey().executionStepId()+"", ""))).toList());
+            for(var attachment:testExecAttachments.data()){
+                String created = attachment.dateCreated();
+                var squadAttachmentEntity = squadDatabaseRepository.getByID(attachment.fileId());
+                if (!squadAttachmentEntity.isEmpty()) {
+                    created = TimeUtils.getUTCTimestampforAttachmentDateCreated(squadAttachmentEntity.get().dateCreated());
+                }else{
+                    created = TimeUtils.getUTCTImestampforSquadAttachment(created);
+                }
+                attachmentsMapped.add(AttachmentAssociationData.createAttachmentAssociationDataFromExecutionStep(
+                        attachment.fileName(),
+                        attachment.fileId(),
+                        null,
+                        attachment.fileSize(),
+                        attachment.author(),
+                        created,
+                        projectId,
+                        testExecutionMapped.getValue().testScriptResultId()+"",
+                        new SquadOriginEntity(testExecutionMapped.getKey().executionStepId()+"", "")));
+            }
         }
 
         logger.info("Execution step attachments progress: "
