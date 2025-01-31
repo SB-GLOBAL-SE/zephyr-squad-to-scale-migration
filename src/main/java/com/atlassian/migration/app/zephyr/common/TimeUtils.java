@@ -14,6 +14,7 @@ public class TimeUtils {
     private static final Logger logger = LoggerFactory.getLogger(TimeUtils.class);
     private static final String DEFAULT_SQUAD_FORMAT = "dd/MMM/yy h:mm a";
     private static final String DEFAULT_JIRA_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    private static final String SQUAD_ATTACHMENT_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
     private static final String SCALE_TIMEZONE = "UTC";
 
     public static final String getUTCTimestampforSquadDate(String dateString){
@@ -35,6 +36,24 @@ public class TimeUtils {
         }
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DEFAULT_JIRA_FORMAT, Locale.ENGLISH);
+            LocalDateTime localDateTime = LocalDateTime.parse(dateString, formatter);
+            ZonedDateTime ldtZoned = localDateTime.atZone(ZoneId.systemDefault());
+
+
+            ZonedDateTime utcZoned = ldtZoned.withZoneSameInstant(ZoneId.of(SCALE_TIMEZONE));
+            return utcZoned.toLocalDateTime().toString();
+        }catch (Exception e){
+            logger.warn("Date parse exception at '"+dateString+"'");
+        }
+        return dateString;
+    }
+
+    public static final String getUTCTimestampforAttachmentDateCreated(String dateString){
+        if(dateString == null){
+            return null;
+        }
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(SQUAD_ATTACHMENT_FORMAT, Locale.ENGLISH);
             LocalDateTime localDateTime = LocalDateTime.parse(dateString, formatter);
             ZonedDateTime ldtZoned = localDateTime.atZone(ZoneId.systemDefault());
 

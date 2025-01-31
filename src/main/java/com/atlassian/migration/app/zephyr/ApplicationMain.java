@@ -65,6 +65,7 @@ public class ApplicationMain {
         var testExecutionCSVFile = prop.getProperty("testExecutionMappedCsvFile");
         var databaseType = prop.getProperty("database");
         var httpVersion = prop.getProperty("httpVersion");
+        var updateDatabaseFieldsPostMigration = Boolean.parseBoolean(prop.getProperty("updateDatabaseFieldsPostMigration"));
         var attachmentsBaseFolder = PropertySanitizer.sanitizeAttachmentsBaseFolder(prop.getProperty("attachmentsBaseFolder"));
 
         var username = args[0];
@@ -73,7 +74,8 @@ public class ApplicationMain {
         var apiConfig = new ApiConfiguration(host, username, password.toCharArray(), httpVersion);
 
         return new MigrationConfiguration(apiConfig, pageSteps, cycleNamePlaceHolder,
-                attachmentsMappedCsvFile, testCaseCSVFile, testExecutionCSVFile, databaseType, attachmentsBaseFolder);
+                attachmentsMappedCsvFile, testCaseCSVFile, testExecutionCSVFile, databaseType,
+                updateDatabaseFieldsPostMigration, attachmentsBaseFolder);
     }
 
     private static SquadToScaleMigrator createSquadToScaleMigrator(MigrationConfiguration migrationConfig) throws IOException {

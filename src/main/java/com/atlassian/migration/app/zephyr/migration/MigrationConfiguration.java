@@ -10,5 +10,6 @@ public record MigrationConfiguration(
         String testCaseCSVFile,
         String testExecutionCSVFile,
         String databaseType,
+        Boolean updateDatabaseFieldsPostMigration,
         String attachmentsBaseFolder) {
 }

@@ -1,8 +1,10 @@
 package com.atlassian.migration.app.zephyr.migration;
 
+import com.atlassian.migration.app.zephyr.common.DataSourceFactory;
 import com.atlassian.migration.app.zephyr.common.ProgressBarUtil;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
+import com.atlassian.migration.app.zephyr.migration.database.DatabasePostRepository;
 import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionPostMigrator;
 import com.atlassian.migration.app.zephyr.migration.model.*;
 import com.atlassian.migration.app.zephyr.migration.service.Resettable;
@@ -142,6 +144,15 @@ public class SquadToScaleMigrator {
             attachmentsMigrator.export(squadToScaleEntitiesMap, projectKey);
             testCasePostMigrator.export(squadToScaleEntitiesMap, projectKey);
             testExecutionPostMigrator.export(squadToScaleEntitiesMap, projectKey);
+
+            if(config.updateDatabaseFieldsPostMigration()) {
+                var dataSourceFactory = new DataSourceFactory();
+                var dataSource = dataSourceFactory.createDataSourceFromDatabaseName(config.databaseType());
+                DatabasePostRepository databasePostRepository = new DatabasePostRepository(dataSource, config.testCaseCSVFile(), config.testExecutionCSVFile());
+                databasePostRepository.updateTestCaseFields();
+                databasePostRepository.updateTestResultsFields();
+            }
+
         } catch (IOException exception) {
             logger.error("Failed to process page with start at: " + startAt + " " + exception.getMessage(), exception);
             throw new RuntimeException(exception);
