@@ -32,7 +32,7 @@ _Postgresql only_
 
 ```sql
 psql
--U <username> -d <db_name> -c "\COPY \"AO_4D28DD_ATTACHMENT\" (\"FILE_NAME\",\"FILE_SIZE\",\"NAME\",\"PROJECT_ID\",\"USER_KEY\",\"TEMPORARY\",\"CREATED_ON\",\"MIME_TYPE\",\"TEST_CASE_ID\",\"STEP_ID\",\"TEST_RESULT_ID\") FROM /<CSV_FILE_NAME>.csv delimiter ',' CSV HEADER"
+-U <username> -d <db_name> -c "\COPY \"AO_4D28DD_ATTACHMENT\" (\"FILE_NAME\",\"FILE_SIZE\",\"NAME\",\"PROJECT_ID\",\"USER_KEY\",\"TEMPORARY\",\"CREATED_ON\",\"MIME_TYPE\",\"TEST_CASE_ID\",\"STEP_ID\",\"TEST_RESULT_ID\",\"TEST_SCRIPT_RESULT_ID\") FROM /<CSV_FILE_NAME>.csv delimiter ',' CSV HEADER"
 ```
 
 ## Installation
@@ -110,14 +110,17 @@ Ensure Java 17 is installed on your machine. Verify by running:
 
 ##### app.properties
 
-| Fields                   | Used For                                                                                                    |
-|--------------------------|-------------------------------------------------------------------------------------------------------------|
-| host                     | Public address of Jira Instance                                                                             |
-| batchSize                | How many Test Cases are processed per batch. Default is 100.                                                |
-| attachmentsMappedCsvFile | The name of the resulting csv generated during the migration                                                |
-| database                 | Name of the database used in the instance. Supported values are `postgresql`, `oracle`, `mssql` and `mysql` |
-| attachmentsBaseFolder    | Where the attachments are located in the Instance Machine                                                   | 
-| httpVersion              | Http version to be used in REST API Calls. Supported values `1.1`, `1`, `2`, `2.0`                          |
+| Fields                            | Used For                                                                                                    |
+|-----------------------------------|-------------------------------------------------------------------------------------------------------------|
+| host                              | Public address of Jira Instance                                                                             |
+| batchSize                         | How many Test Cases are processed per batch. Default is 100.                                                |
+| attachmentsMappedCsvFile          | The name of the resulting csv generated during the migration                                                |
+| testCaseMappedCsvFile             | The name of the resulting csv generated during the migration for test case                                  |
+| testExecutionMappedCsvFile        | The name of the resulting csv generated during the migration for test execution                             |
+| database                          | Name of the database used in the instance. Supported values are `postgresql`, `oracle`, `mssql` and `mysql` |
+| attachmentsBaseFolder             | Where the attachments are located in the Instance Machine                                                   | 
+| httpVersion                       | Http version to be used in REST API Calls. Supported values `1.1`, `1`, `2`, `2.0`                          | 
+| updateDatabaseFieldsPostMigration | Flag to update the fields in database post migration default set to false.                                  | 
 
 Example:
 
@@ -125,8 +128,12 @@ Example:
 host=https://my-jira-instance-url.com
 batchSize=100
 attachmentsMappedCsvFile=AO_4D28DD_ATTACHMENT.csv
+testCaseMappedCsvFile=AO_4D28DD_TEST_CASE.csv
+testExecutionMappedCsvFile=AO_4D28DD_TEST_RESULT.csv
 database=postgresql
 attachmentsBaseFolder=/home/ubuntu/jira/data/attachments/
+#this is to update the database fields of test case, test execution post migration using script
+updateDatabaseFieldsPostMigration=false
 ```
 
 ##### database.properties
@@ -182,6 +189,8 @@ following entities are supported:
 - Test Steps and attachments
 - Cycles
 - Test Executions and attachments
+- Test Execution steps and attachments
+- Custom Test Execution status and Test Execution step status
 
 ### What it doesn't do
 
