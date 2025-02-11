@@ -49,7 +49,7 @@ public class DatabasePostRepository {
                 while ((testCaseMapper = beanReader.read(TestCaseMapper.class, header, processors)) != null) {
                     try {
                         updateDatabaseforTestCase(testCaseMapper);
-                        logger.error("Updated fields for test case: "+testCaseMapper.getSCALE_TESTCASE_ID());
+                        logger.info("Updated fields for test case: "+testCaseMapper.getSCALE_TESTCASE_ID());
                     }catch (Exception e){
                         logger.error("Updating failed for test case: "+testCaseMapper.getSCALE_TESTCASE_ID(), e.getMessage());
                     }
@@ -87,7 +87,7 @@ public class DatabasePostRepository {
                 while ((testExecutionMapper = beanReader.read(TestExecutionMapper.class, header, processors)) != null) {
                     try {
                         updateDatabaseforTestResults(testExecutionMapper);
-                        logger.error("Updated fields for test results/execution: "+testExecutionMapper.getSCALE_EXECUTION_ID());
+                        logger.info("Updated fields for test results/execution: "+testExecutionMapper.getSCALE_EXECUTION_ID());
                     }catch (Exception e){
                         logger.error("Updating failed for test results: "+testExecutionMapper.getSCALE_EXECUTION_ID(), e.getMessage());
                     }

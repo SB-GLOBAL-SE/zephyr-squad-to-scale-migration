@@ -66,6 +66,7 @@ class SquadToScaleMigratorTest {
                 "attachments_mapped.csv",
                 "test_cases_Mapped.csv",
                 "test_executions_Mapped.csv",
+                "dd/MMM/yy h:mm a",
                 "postgresql",
                 false,
                 "/home/ubuntu"));

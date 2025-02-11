@@ -3,6 +3,7 @@ package com.atlassian.migration.app.zephyr;
 import com.atlassian.migration.app.zephyr.common.ApiConfiguration;
 import com.atlassian.migration.app.zephyr.common.DataSourceFactory;
 import com.atlassian.migration.app.zephyr.common.PropertySanitizer;
+import com.atlassian.migration.app.zephyr.common.TimeUtils;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.migration.*;
 import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionCsvExporter;
@@ -34,6 +35,10 @@ public class ApplicationMain {
 
             var migrationConfig = loadMigrationConfiguration(args, input);
 
+            // updating default time format in utils may be not best way
+            if(migrationConfig.jiraDateTimeFormat() != null && !migrationConfig.jiraDateTimeFormat().isEmpty()) {
+                TimeUtils.updateDefaultSquadFormat(migrationConfig.jiraDateTimeFormat());
+            }
             logger.info("Starting migration...");
 
             SquadToScaleMigrator migrator = createSquadToScaleMigrator(migrationConfig);
@@ -63,6 +68,7 @@ public class ApplicationMain {
         var attachmentsMappedCsvFile = prop.getProperty("attachmentsMappedCsvFile");
         var testCaseCSVFile = prop.getProperty("testCaseMappedCsvFile");
         var testExecutionCSVFile = prop.getProperty("testExecutionMappedCsvFile");
+        var jiraDateTimeFormat = prop.getProperty("jiraDateTimeFormat");
         var databaseType = prop.getProperty("database");
         var httpVersion = prop.getProperty("httpVersion");
         var updateDatabaseFieldsPostMigration = Boolean.parseBoolean(prop.getProperty("updateDatabaseFieldsPostMigration"));
@@ -74,8 +80,8 @@ public class ApplicationMain {
         var apiConfig = new ApiConfiguration(host, username, password.toCharArray(), httpVersion);
 
         return new MigrationConfiguration(apiConfig, pageSteps, cycleNamePlaceHolder,
-                attachmentsMappedCsvFile, testCaseCSVFile, testExecutionCSVFile, databaseType,
-                updateDatabaseFieldsPostMigration, attachmentsBaseFolder);
+                attachmentsMappedCsvFile, testCaseCSVFile, testExecutionCSVFile, jiraDateTimeFormat,
+                databaseType, updateDatabaseFieldsPostMigration, attachmentsBaseFolder);
     }
 
     private static SquadToScaleMigrator createSquadToScaleMigrator(MigrationConfiguration migrationConfig) throws IOException {

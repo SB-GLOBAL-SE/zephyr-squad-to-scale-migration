@@ -9,6 +9,7 @@ public record MigrationConfiguration(
         String attachmentsMappedCsvFile,
         String testCaseCSVFile,
         String testExecutionCSVFile,
+        String jiraDateTimeFormat,
         String databaseType,
         Boolean updateDatabaseFieldsPostMigration,
         String attachmentsBaseFolder) {

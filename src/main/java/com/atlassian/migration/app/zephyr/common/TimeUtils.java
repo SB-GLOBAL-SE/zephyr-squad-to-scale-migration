@@ -12,10 +12,14 @@ import java.util.Locale;
 public class TimeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(TimeUtils.class);
-    private static final String DEFAULT_SQUAD_FORMAT = "dd/MMM/yy h:mm a";
+    private static String DEFAULT_SQUAD_FORMAT = "dd/MMM/yy h:mm a";
     private static final String DEFAULT_JIRA_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     private static final String SQUAD_ATTACHMENT_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
     private static final String SCALE_TIMEZONE = "UTC";
+
+    public static void updateDefaultSquadFormat(String dateFormat){
+        DEFAULT_SQUAD_FORMAT = dateFormat;
+    }
 
     public static final String getUTCTimestampforSquadDate(String dateString){
         if(dateString == null){
@@ -27,7 +31,8 @@ public class TimeUtils {
 
 
         ZonedDateTime utcZoned = ldtZoned.withZoneSameInstant(ZoneId.of(SCALE_TIMEZONE));
-        return utcZoned.toLocalDateTime().toString();
+        DateTimeFormatter databaseDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        return utcZoned.format(databaseDateFormatter);
     }
 
     public static final String getUTCTimestampforJiraDate(String dateString){
