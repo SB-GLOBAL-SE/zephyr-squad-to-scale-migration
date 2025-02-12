@@ -12,6 +12,7 @@ import java.util.Locale;
 public class TimeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger(TimeUtils.class);
+    public static final String DATABASE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
     private static String DEFAULT_SQUAD_FORMAT = "dd/MMM/yy h:mm a";
     private static final String DEFAULT_JIRA_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     private static final String SQUAD_ATTACHMENT_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
@@ -31,7 +32,7 @@ public class TimeUtils {
 
 
         ZonedDateTime utcZoned = ldtZoned.withZoneSameInstant(ZoneId.of(SCALE_TIMEZONE));
-        DateTimeFormatter databaseDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        DateTimeFormatter databaseDateFormatter = DateTimeFormatter.ofPattern(DATABASE_FORMAT);
         return utcZoned.format(databaseDateFormatter);
     }
 
@@ -46,7 +47,8 @@ public class TimeUtils {
 
 
             ZonedDateTime utcZoned = ldtZoned.withZoneSameInstant(ZoneId.of(SCALE_TIMEZONE));
-            return utcZoned.toLocalDateTime().toString();
+            DateTimeFormatter databaseDateFormatter = DateTimeFormatter.ofPattern(DATABASE_FORMAT);
+            return utcZoned.format(databaseDateFormatter);
         }catch (Exception e){
             logger.warn("Date parse exception at '"+dateString+"'");
         }
@@ -64,7 +66,8 @@ public class TimeUtils {
 
 
             ZonedDateTime utcZoned = ldtZoned.withZoneSameInstant(ZoneId.of(SCALE_TIMEZONE));
-            return utcZoned.toLocalDateTime().toString();
+            DateTimeFormatter databaseDateFormatter = DateTimeFormatter.ofPattern(DATABASE_FORMAT);
+            return utcZoned.format(databaseDateFormatter);
         }catch (Exception e){
             logger.warn("Date parse exception at '"+dateString+"'");
         }
@@ -125,7 +128,8 @@ public class TimeUtils {
 
             ZonedDateTime ldtZoned = dateTime.atZone(ZoneId.systemDefault());
             ZonedDateTime utcZoned = ldtZoned.withZoneSameInstant(ZoneId.of(SCALE_TIMEZONE));
-            return utcZoned.toLocalDateTime().toString();
+            DateTimeFormatter databaseDateFormatter = DateTimeFormatter.ofPattern(DATABASE_FORMAT);
+            return utcZoned.format(databaseDateFormatter);
         }catch (Exception e){
             //Some thing went wrong
         }
