@@ -9,6 +9,8 @@ import static com.atlassian.migration.app.zephyr.scale.model.ScaleCustomFieldPay
 
 public class ScaleProjectTestCaseCustomFieldPayload {
 
+    public static final String STATUS_SYSTEM_FIELD = "status";
+
     //ETS ONLY collection of custom fields
     public static final ScaleTestCaseCustomField moduleLibraryCf = new ScaleTestCaseCustomField(
                     "Module Library",
@@ -109,14 +111,14 @@ public class ScaleProjectTestCaseCustomFieldPayload {
             Collections.emptyList());
 
     public static final Map<String, ScaleTestCaseCustomField> CUSTOM_FIELD_ID_TO_NAMES = Map.of (
-            "customfield_12200", moduleLibraryCf,
-            "customfield_10202", testTypeCf,
-            "customfield_23102", testTypeDetailCf,
-            "customfield_15303", testCaseClassificationCf,
-            "customfield_11111", testCaseCoverageCf,
-            "customfield_15804", testAutomationToolCf,
-            "customfield_11113", automationStatusCf,
-            "customfield_23202", testCICf,
-            "customfield_11118", interfaceTouchPointCf
+//            "customfield_12200", moduleLibraryCf,
+//            "customfield_10202", testTypeCf,
+//            "customfield_23102", testTypeDetailCf,
+//            "customfield_15303", testCaseClassificationCf,
+//            "customfield_11111", testCaseCoverageCf,
+//            "customfield_15804", testAutomationToolCf,
+//            "customfield_11113", automationStatusCf,
+//            "customfield_23202", testCICf,
+//            "customfield_11118", interfaceTouchPointCf
     );
 }

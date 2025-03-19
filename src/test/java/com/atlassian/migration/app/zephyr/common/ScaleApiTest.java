@@ -76,7 +76,7 @@ public class ScaleApiTest {
 
         private final ScaleTestCaseCreationPayload scaleTestCaseCreationPayload =
                 new ScaleTestCaseCreationPayload("KEY-1", "name", "objective",
-                        Collections.emptyList(), "owner", Collections.emptyList(), null);
+                        Collections.emptyList(), "owner", Collections.emptyList(), "status", null);
 
 
         @Test

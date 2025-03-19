@@ -91,6 +91,7 @@ public class SquadToScaleMigrator {
             logger.info("Fetching total issues by project key...");
             var total = jiraApi.fetchTotalIssuesByProjectName(projectKey);
 
+            var projectResponse = jiraApi.getProjectByKey(projectKey);
             if (total == 0) {
                 logger.info("Project doesn't have Squad Objects, skipping it");
                 return;
@@ -100,6 +101,9 @@ public class SquadToScaleMigrator {
 
             logger.info("Enabling project in Scale...");
             scaleApi.enableProject(new EnableProjectPayload(projectKey, true));
+
+            logger.info("updating priorities & Statuses.");
+            scaleApi.updateTestCaseStatuses(projectResponse.id());
 
             logger.info("Creating migration Custom Fields...");
             createMigrationCustomFields(projectKey);
@@ -120,7 +124,7 @@ public class SquadToScaleMigrator {
                 logger.info("Issue progress: "
                         + ProgressBarUtil.getProgressBar(startAt, total, startTimeMillis));
 
-                processPage(startAt, projectKey, squadToScaleEntitiesMap);
+                processPage(startAt, projectKey, projectResponse.id(), squadToScaleEntitiesMap);
 
                 startAt += config.pageSteps();
             }
@@ -145,7 +149,7 @@ public class SquadToScaleMigrator {
         }
     }
 
-    private void processPage(int startAt, String projectKey, SquadToScaleEntitiesMap squadToScaleEntitiesMap) {
+    private void processPage(int startAt, String projectKey, String projectId, SquadToScaleEntitiesMap squadToScaleEntitiesMap) {
         try {
 
             logger.info("Fetching issues starting at " + startAt + "...");
@@ -157,7 +161,7 @@ public class SquadToScaleMigrator {
 
             logger.info("Fetched " + issues.size() + " issues.");
 
-            var testCaseMap = createScaleTestCases(issues, projectKey);
+            var testCaseMap = createScaleTestCases(issues, projectKey, projectId);
             updateStepsAndPostExecution(testCaseMap, projectKey, squadToScaleEntitiesMap);
             squadToScaleEntitiesMap.testCaseMap().putAll(testCaseMap);
         } catch (IOException exception) {
@@ -285,12 +289,12 @@ public class SquadToScaleMigrator {
     }
 
     private SquadToScaleTestCaseMap createScaleTestCases(List<JiraIssuesResponse> issues, String
-            projectKey) throws IOException {
+            projectKey, String projectId) throws IOException {
         try {
             var map = new SquadToScaleTestCaseMap();
 
             for (var issue : issues) {
-                var scaleTestCaseKey = createTestCaseForIssue(issue, projectKey);
+                var scaleTestCaseKey = createTestCaseForIssue(issue, projectKey, projectId);
 //                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key()), scaleTestCaseKey);
                 String creatorKey = (issue.fields().creator != null && issue.fields().creator.key() != null)
                         ? issue.fields().creator.key()
@@ -304,10 +308,16 @@ public class SquadToScaleMigrator {
         }
     }
 
-    private String createTestCaseForIssue(JiraIssuesResponse issue, String projectKey) throws
+    private String createTestCaseForIssue(JiraIssuesResponse issue, String projectKey, String projectId) throws
             IOException {
 
         try {
+            String sanitizeStatus = scaleTestCaseFacade.sanitizeStatus(issue.fields().status);
+            if(sanitizeStatus != null && !sanitizeStatus.isEmpty() && !ScaleMigrationTestCaseStatusPayload.MIGRATION_TESTCASE_STATUSES.contains(sanitizeStatus)){
+                String id = scaleApi.CreateScaleTestcaseStatus(projectId, sanitizeStatus);
+                ScaleMigrationTestCaseStatusPayload.MIGRATION_TESTCASE_STATUSES.add(sanitizeStatus);
+            }
+
             ScaleTestCaseCreationPayload testCasePayload = this.scaleTestCaseFacade.createTestCasePayload(issue, projectKey);
 
             var scaleTestCaseKey = scaleApi.createTestCases(testCasePayload);

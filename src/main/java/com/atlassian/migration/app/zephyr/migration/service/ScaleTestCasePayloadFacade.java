@@ -3,6 +3,7 @@ package com.atlassian.migration.app.zephyr.migration.service;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssueComponent;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuePriority;
+import com.atlassian.migration.app.zephyr.jira.model.JiraIssueStatusResponse;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleCustomFieldPayload;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleProjectTestCaseCustomFieldPayload;
@@ -23,6 +24,7 @@ public class ScaleTestCasePayloadFacade {
 
     private static final Logger logger = LoggerFactory.getLogger(ScaleTestCasePayloadFacade.class);
 
+    private static final String DEFAULT_STATUS = "Draft";
     private static final String DEFAULT_PRIORITY = "Medium";
 
     private final JiraApi jiraApi;
@@ -33,7 +35,8 @@ public class ScaleTestCasePayloadFacade {
 
     public ScaleTestCaseCreationPayload createTestCasePayload(JiraIssuesResponse issue, String projectKey) {
         var sanitizedPriority = sanitizePriority(issue.fields().priority);
-        
+
+        var sanitizedStatus = sanitizeStatus(issue.fields().status);
         // Handle null reporter
         String reporterKey = (issue.fields().reporter != null && issue.fields().reporter.key() != null) 
                              ? issue.fields().reporter.key() 
@@ -53,6 +56,7 @@ public class ScaleTestCasePayloadFacade {
                 issue.fields().labels,
                 reporterKey, // Use the potentially null reporterKey
                 getIssueLinksIds(issue),
+                sanitizedStatus,
                 scaleCustomFields
         );
     }
@@ -120,6 +124,20 @@ public class ScaleTestCasePayloadFacade {
             return squadPriority.name();
         } else {
             return DEFAULT_PRIORITY;
+        }
+    }
+
+    public String sanitizeStatus(JiraIssueStatusResponse squadStatus) {
+
+        if (squadStatus != null) {
+            String name = squadStatus.name();
+            if (name == null || name.isBlank()) {
+                logger.warn("Priority with id:" + squadStatus.id() + " has an empty name.");
+                return "";
+            }
+            return name;
+        } else {
+            return DEFAULT_STATUS;
         }
     }
 
