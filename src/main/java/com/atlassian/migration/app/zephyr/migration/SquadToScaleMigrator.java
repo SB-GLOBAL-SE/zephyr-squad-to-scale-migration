@@ -103,6 +103,7 @@ public class SquadToScaleMigrator {
             scaleApi.enableProject(new EnableProjectPayload(projectKey, true));
 
             logger.info("updating priorities & Statuses.");
+            scaleApi.updateTestCasePriorities(projectResponse.id());
             scaleApi.updateTestCaseStatuses(projectResponse.id());
 
             logger.info("Creating migration Custom Fields...");
@@ -316,6 +317,12 @@ public class SquadToScaleMigrator {
             if(sanitizeStatus != null && !sanitizeStatus.isEmpty() && !ScaleMigrationTestCaseStatusPayload.MIGRATION_TESTCASE_STATUSES.contains(sanitizeStatus)){
                 String id = scaleApi.CreateScaleTestcaseStatus(projectId, sanitizeStatus);
                 ScaleMigrationTestCaseStatusPayload.MIGRATION_TESTCASE_STATUSES.add(sanitizeStatus);
+            }
+
+            String sanitizepriority = scaleTestCaseFacade.sanitizePriority(issue.fields().priority);
+            if(sanitizepriority != null && !sanitizepriority.isEmpty() && !ScaleMigrationTestCasePriorityPayload.MIGRATION_TESTCASE_PRIORITIES.contains(sanitizepriority)){
+                String id = scaleApi.CreateScaleTestcasePriority(projectId, sanitizepriority);
+                ScaleMigrationTestCasePriorityPayload.MIGRATION_TESTCASE_PRIORITIES.add(sanitizepriority);
             }
 
             ScaleTestCaseCreationPayload testCasePayload = this.scaleTestCaseFacade.createTestCasePayload(issue, projectKey);

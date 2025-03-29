@@ -56,6 +56,7 @@ public class ScaleTestCasePayloadFacade {
                 issue.fields().labels,
                 reporterKey, // Use the potentially null reporterKey
                 getIssueLinksIds(issue),
+                sanitizedPriority,
                 sanitizedStatus,
                 scaleCustomFields
         );
@@ -114,7 +115,7 @@ public class ScaleTestCasePayloadFacade {
         return "";
     }
 
-    private String sanitizePriority(JiraIssuePriority squadPriority) {
+    public String sanitizePriority(JiraIssuePriority squadPriority) {
 
         if (squadPriority != null) {
             if (squadPriority.name() == null || squadPriority.name().isBlank()) {

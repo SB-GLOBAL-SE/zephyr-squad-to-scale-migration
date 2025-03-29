@@ -86,6 +86,7 @@ public class ScaleTestCasePayloadFacadeTest {
                 Collections.emptyList(),
                 "REP",
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
+                "HIGH",
                 "status_name",
                 Map.of(
                         "components", "component,component2",
@@ -114,6 +115,7 @@ public class ScaleTestCasePayloadFacadeTest {
                 Collections.emptyList(),
                 "REP",
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
+                "Medium",
                 "status_name",
                 Map.of(
                         "components", "component,component2",
@@ -142,6 +144,7 @@ public class ScaleTestCasePayloadFacadeTest {
                 Collections.emptyList(),
                 "REP",
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
+                "",
                 "status_name",
                 Map.of(
                         "components", "component,component2",
@@ -173,6 +176,7 @@ public class ScaleTestCasePayloadFacadeTest {
                 Collections.emptyList(),
                 "REP",
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
+                "HIGH",
                 "status_name",
                 Map.of(
                         "components", "component,component2",

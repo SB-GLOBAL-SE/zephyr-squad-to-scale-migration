@@ -29,6 +29,8 @@ public class ScaleApi extends BaseApi {
     public static final String FETCH_SCALE_RESULTS_STATUSES = "/rest/tests/1.0/testresultstatus?projectId=%s";
     public static final String FETCH_SCALE_TESTCASE_STATUSES = "/rest/tests/1.0/testcasestatus?projectId=%s";
     public static final String CREATE_SCALE_TESTCASE_STATUSES = "/rest/tests/1.0/testcasestatus";
+    public static final String FETCH_SCALE_TESTCASE_PRIORITY = "/rest/tests/1.0/testcasepriority?projectId=%s";
+    public static final String CREATE_SCALE_TESTCASE_PRIORITY = "/rest/tests/1.0/testcasepriority";
     public static final String CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT = "/rest/tests/1.0/testresultstatus";
     public static final String CREATE_SCALE_TEST_SCRIPT_RESULT_DEFECT_ENDPOINT = "/rest/tests/1.0/tracelink/testresult/bulk/create";
     public static final String CUSTOM_FIELD_DUPLICATED_EXPECTED_MESSAGE = "Custom field name is duplicated";
@@ -153,6 +155,34 @@ public class ScaleApi extends BaseApi {
         return result.get("id").toString();
     }
 
+    public void updateTestCasePriorities(String projectId) throws ZephyrApiException {
+        try {
+            var response = sendHttpGet(getUri(urlPath(FETCH_SCALE_TESTCASE_PRIORITY, projectId)));
+            List<ScaleMigrationTestCasePriorityPayload> listofScaleResultsStatus = gson.fromJson(response, new TypeToken<List<ScaleMigrationTestCasePriorityPayload>>(){}.getType());
+            listofScaleResultsStatus.forEach(priotiy -> {
+                ScaleMigrationTestCasePriorityPayload.MIGRATION_TESTCASE_PRIORITIES.add(priotiy.name());
+            });
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_PRIORITY, projectId), e);
+        }
+    }
+
+    public String CreateScaleTestcasePriority(String projectId, String name) throws ZephyrApiException{
+        Map<String, Object> params = new HashMap<>();
+        params.put("projectId", Integer.parseInt(projectId));
+        params.put("name", name);
+
+        String response = "";
+        try {
+            response = sendHttpPost(CREATE_SCALE_TESTCASE_PRIORITY, params);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATING_TESTCASE_PRIORITY, e);
+        }
+
+        Map<String, Object> result = gson.fromJson(response, Map.class);
+        return result.get("id").toString();
+    }
+
     public String createMigrationTestCycle(String projectKey, String cycleName, String cycleVersion) throws ZephyrApiException {
 
         Map<String, Object> params = new HashMap<>();
@@ -258,6 +288,12 @@ public class ScaleApi extends BaseApi {
 
         public static final String ERROR_FETCHING_TESTRESULTS_STATUS = "Error while fetching Test results status at " +
                 FETCH_SCALE_RESULTS_STATUSES;
+
+        public static final String ERROR_FETCHING_TESTCASE_PRIORITY = "Error while fetching Test Case prioirity at " +
+                FETCH_SCALE_TESTCASE_PRIORITY;
+
+        public static final String ERROR_CREATING_TESTCASE_PRIORITY = "Error while creating Test Case prioirity at " +
+                CREATE_SCALE_TESTCASE_PRIORITY;
 
         public static final String ERROR_FETCHING_TESTCASE_STATUS = "Error while fetching Test Case status at " +
                 FETCH_SCALE_TESTCASE_STATUSES;
