@@ -62,8 +62,7 @@ public class ScaleTestCasePayloadFacadeTest {
                         new RelatedIssue("2", "JIRA-100", "self", fields)));
 
         jiraIssueFieldResponseMock.components = List.of(
-                new JiraIssueComponent(1, "component", "self"),
-                new JiraIssueComponent(2, "component2", "self")
+                new JiraIssueComponent(1, "component", "self")
         );
         jiraIssueFieldResponseMock.priority = new JiraIssuePriority(1, "HIGH");
         jiraIssueFieldResponseMock.attachment = List.of(
@@ -88,8 +87,9 @@ public class ScaleTestCasePayloadFacadeTest {
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
                 "HIGH",
                 "status_name",
+                "component",
                 Map.of(
-                        "components", "component,component2",
+                        "components", "component",
                         "squadStatus", "status_name",
                         "squadPriority", "HIGH"
                 )
@@ -117,8 +117,9 @@ public class ScaleTestCasePayloadFacadeTest {
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
                 "Medium",
                 "status_name",
+                "component",
                 Map.of(
-                        "components", "component,component2",
+                        "components", "component",
                         "squadStatus", "status_name",
                         "squadPriority", "Medium"
                 )
@@ -146,8 +147,9 @@ public class ScaleTestCasePayloadFacadeTest {
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
                 "",
                 "status_name",
+                "component",
                 Map.of(
-                        "components", "component,component2",
+                        "components", "component",
                         "squadStatus", "status_name",
                         "squadPriority", ""
                 )
@@ -178,8 +180,9 @@ public class ScaleTestCasePayloadFacadeTest {
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
                 "HIGH",
                 "status_name",
+                "component",
                 Map.of(
-                        "components", "component,component2",
+                        "components", "component",
                         "squadStatus", "status_name",
                         "squadPriority", "HIGH"
                 )

@@ -12,6 +12,7 @@ import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCustomField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedList;
 import java.util.stream.Stream;
 import java.io.IOException;
 import java.util.HashMap;
@@ -37,6 +38,26 @@ public class ScaleTestCasePayloadFacade {
         var sanitizedPriority = sanitizePriority(issue.fields().priority);
 
         var sanitizedStatus = sanitizeStatus(issue.fields().status);
+
+        var components = issue.fields().components;
+
+        List<String> labels = issue.fields().labels;
+        if(labels == null){
+            labels = new LinkedList<String>();
+        }
+        String componentName = null;
+        if(components != null && components.size() > 0){
+            var firstComponent = components.get(0);
+            componentName = firstComponent.name();
+            if(components.size() > 1) {
+                for (var comp : components.subList(1, components.size())) {
+                    String cName = comp.name();
+                    if (!labels.contains(cName)) {
+                        labels.add(cName);
+                    }
+                }
+            }
+        }
         // Handle null reporter
         String reporterKey = (issue.fields().reporter != null && issue.fields().reporter.key() != null) 
                              ? issue.fields().reporter.key() 
@@ -58,6 +79,7 @@ public class ScaleTestCasePayloadFacade {
                 getIssueLinksIds(issue),
                 sanitizedPriority,
                 sanitizedStatus,
+                componentName,
                 scaleCustomFields
         );
     }
