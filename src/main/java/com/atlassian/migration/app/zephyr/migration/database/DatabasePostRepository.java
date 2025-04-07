@@ -51,15 +51,15 @@ public class DatabasePostRepository {
                         updateDatabaseforTestCase(testCaseMapper);
                         logger.info("Updated fields for test case: "+testCaseMapper.getSCALE_TESTCASE_ID());
                     }catch (Exception e){
-                        logger.error("Updating failed for test case: "+testCaseMapper.getSCALE_TESTCASE_ID(), e.getMessage());
+                        logger.error("Updating failed for test case: "+testCaseMapper.getSCALE_TESTCASE_ID(), e);
                     }
                 }
 
             } catch (IOException e) {
-                logger.error("error occurred while updating test case fields."+e.getMessage());
+                logger.error("error occurred while updating test case fields."+e.getMessage(), e);
             }
         }catch (Exception e){
-            logger.error("error while reading test case mapped fields. "+e.getMessage());
+            logger.error("error while reading test case mapped fields. "+e.getMessage(), e);
         }
     }
 
@@ -89,15 +89,15 @@ public class DatabasePostRepository {
                         updateDatabaseforTestResults(testExecutionMapper);
                         logger.info("Updated fields for test results/execution: "+testExecutionMapper.getSCALE_EXECUTION_ID());
                     }catch (Exception e){
-                        logger.error("Updating failed for test results: "+testExecutionMapper.getSCALE_EXECUTION_ID(), e.getMessage());
+                        logger.error("Updating failed for test results: "+testExecutionMapper.getSCALE_EXECUTION_ID(), e.getMessage(), e);
                     }
                 }
 
             } catch (IOException e) {
-                logger.error("error occurred while updating test results fields."+e.getMessage());
+                logger.error("error occurred while updating test results fields."+e.getMessage(), e);
             }
         }catch (Exception e){
-            logger.error("error occurred while reading test execution mapped fields."+e.getMessage());
+            logger.error("error occurred while reading test execution mapped fields."+e.getMessage(), e);
         }
     }
 
