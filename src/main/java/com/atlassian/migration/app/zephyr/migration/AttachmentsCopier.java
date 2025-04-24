@@ -45,6 +45,7 @@ public class AttachmentsCopier {
                 getOriginalProjectKey(key, historicalProjectKeys));
 
         if (projectHistoricalKeys == null) {
+            logger.info("This project has historical keys so attachments are not copied.");
             return;
         }
 
@@ -91,7 +92,7 @@ public class AttachmentsCopier {
         Path destinationFilePath = get(new StringBuilder(destinationDir.toString())
                 .append("/")
                 .append(fileName).toString());
-
+        logger.info("copied the file to: "+destinationFilePath);
         try {
             Files.copy(Paths.get(originFilePath), destinationFilePath, REPLACE_EXISTING);
             Files.setPosixFilePermissions(destinationFilePath, PosixFilePermissions.fromString(FILES_FULL_PERMISSION));

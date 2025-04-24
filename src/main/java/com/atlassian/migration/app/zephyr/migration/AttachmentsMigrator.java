@@ -192,7 +192,7 @@ public class AttachmentsMigrator {
             }
 
             var issueAttachments = jiraApi.getIssueAttachmentsByIssueId(squadTestCase.testCaseId());
-
+            logger.info(String.format("issue attachments for issue: %s and no of attachments: %s", squadTestCase.testCaseId(), issueAttachments.size()));
             attachmentsMapped.addAll(issueAttachments.stream().map(
                     attachment -> AttachmentAssociationData.createAttachmentAssociationDataFromTestCase(
                             attachment.filename(),

@@ -73,7 +73,11 @@ public class DatabasePostRepository {
 
         var databaseType = DatabaseUtils.defineDatabaseType(datasource);
         String setfields = " \"CREATED_BY\" = '"+testCaseMapper.getCREATED_BY()+"', \"CREATED_ON\" = '"+testCaseMapper.getCREATED_ON()+"'";
-        String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_CASE_TABLE_NAME+ "\" set "+setfields+" WHERE \"KEY\" = '"+testCaseMapper.getSCALE_TESTCASE_ID()+"'";
+        String schema = datasource.getSchema();
+        String sql_stmt = "UPDATE "+schema+".\""+TEST_CASE_TABLE_NAME+ "\" set "+setfields+" WHERE \"KEY\" = '"+testCaseMapper.getSCALE_TESTCASE_ID()+"'";
+        if(schema == null){
+            sql_stmt = "UPDATE \""+TEST_CASE_TABLE_NAME+ "\" set "+setfields+" WHERE \"KEY\" = '"+testCaseMapper.getSCALE_TESTCASE_ID()+"'";
+        }
         return sql_stmt;
     }
 
@@ -110,7 +114,11 @@ public class DatabasePostRepository {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
         var databaseType = DatabaseUtils.defineDatabaseType(datasource);
         String setfields = " \"CREATED_BY\" = '"+testExecutionMapper.getCREATED_BY()+"', \"CREATED_ON\" = '"+testExecutionMapper.getCREATED_ON()+"'";
-        String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        String schema = datasource.getSchema();
+        String sql_stmt = "UPDATE "+ schema +".\""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        if(schema == null){
+            sql_stmt = "UPDATE \""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        }
         return sql_stmt;
     }
 
