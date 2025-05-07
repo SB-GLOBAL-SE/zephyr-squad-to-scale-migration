@@ -23,6 +23,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class ScaleTestExecutionPayloadFacadeTest {
 
+//    public static final String EXECUTED_TIME = "2025-01-21T18:05:00";
+    public static final String EXECUTED_TIME = "2025-01-21T07:35:00";
     @Mock
     private JiraApi jiraApiMock;
 
@@ -60,7 +62,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "Pass",
                 scaleTestCaseKeyMock,
                 "executedBy",
-                "2025-01-21T18:05:00",
+                EXECUTED_TIME,
                 "assignee",
                 "html_content",
                 "version",
@@ -137,7 +139,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "In Progress",
                 scaleTestCaseKeyMock,
                 "executedBy",
-                "2025-01-21T18:05:00",
+                EXECUTED_TIME,
                 "assignee",
                 "html_content",
                 "version",
@@ -221,7 +223,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "Pass",
                 scaleTestCaseKeyMock,
                 "executedBy",
-                "2025-01-21T18:05:00",
+                EXECUTED_TIME,
                 "assignee",
                 "html_content",
                 null,
@@ -278,7 +280,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "Pass",
                 scaleTestCaseKeyMock,
                 "executedBy",
-                "2025-01-21T18:05:00",
+                EXECUTED_TIME,
                 null,
                 "html_content",
                 "version",
@@ -334,7 +336,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "Pass",
                 scaleTestCaseKeyMock,
                 "executedBy",
-                "2025-01-21T18:05:00",
+                EXECUTED_TIME,
                 null,
                 "html_content",
                 "version",

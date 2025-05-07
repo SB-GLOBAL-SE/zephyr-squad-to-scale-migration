@@ -138,9 +138,11 @@ public class SquadToScaleMigrator {
             if(config.updateDatabaseFieldsPostMigration()) {
                 var dataSourceFactory = new DataSourceFactory();
                 var dataSource = dataSourceFactory.createDataSourceFromDatabaseName(config.databaseType());
-                DatabasePostRepository databasePostRepository = new DatabasePostRepository(dataSource, config.testCaseCSVFile(), config.testExecutionCSVFile());
+                DatabasePostRepository databasePostRepository = new DatabasePostRepository(dataSource,
+                        config.testCaseCSVFile(), config.testExecutionCSVFile(), config.databaseType());
                 databasePostRepository.updateTestCaseFields();
                 databasePostRepository.updateTestResultsFields();
+                databasePostRepository.updateAttachmentRecords(config.attachmentsMappedCsvFile());
             }
             logger.info("Issue progress: "
                     + ProgressBarUtil.getProgressBar(total, total, startTimeMillis));
