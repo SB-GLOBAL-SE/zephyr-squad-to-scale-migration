@@ -9,6 +9,7 @@ public class SquadToScaleTestExecutionMap extends HashMap<SquadToScaleTestExecut
             Object createdBy,
             String createdOn,
             String modifiedBy,
-            String modifiedOn
+            String modifiedOn,
+            String executedOn
     ){}
 }

@@ -437,7 +437,7 @@ public class SquadToScaleMigrator {
                 var scaleTestExecutionCreatedPayload = scaleApi.createTestExecution(scaleCycleKey,
                         testExecutionPayload);
 //                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id()),
-                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id(), execution.createdBy(), execution.createdOn(), null, null),
+                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id(), execution.createdBy(), execution.createdOn(), null, null, execution.executedOn() == null ? null : execution.executedOn().toString()),
                         scaleTestExecutionCreatedPayload.id());
 
                 // fetching Step Results or Execution Step Mapping

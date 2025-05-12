@@ -31,6 +31,7 @@ public class DatabasePostRepository {
     private static final String TEST_CASE_TABLE_NAME = "AO_4D28DD_TEST_CASE";
     private static final String TEST_EXECUTION_TABLE_NAME = "AO_4D28DD_TEST_RESULT";
     private static final String ATTACHMENT_TABLE_NAME = "AO_4D28DD_ATTACHMENT";
+    private static final String TEST_SCRIPT_RESULT_TABLE_NAME = "AO_4D28DD_TEST_SCRIPT_RESULT";
     private final String testcaseCsvFile;
     private final String testResultCsvFile;
     private final String databaseType;
@@ -97,6 +98,7 @@ public class DatabasePostRepository {
                 while ((testExecutionMapper = beanReader.read(TestExecutionMapper.class, header, processors)) != null) {
                     try {
                         updateDatabaseforTestResults(testExecutionMapper);
+                        updateDatabaseforTestScriptResults(testExecutionMapper);
                         logger.info("Updated fields for test results/execution: "+testExecutionMapper.getSCALE_EXECUTION_ID());
                     }catch (Exception e){
                         logger.error("Updating failed for test results: "+testExecutionMapper.getSCALE_EXECUTION_ID(), e.getMessage(), e);
@@ -185,9 +187,35 @@ public class DatabasePostRepository {
     }
 
     private void updateDatabaseforTestResults(TestExecutionMapper testExecutionMapper) {
-        String sql_stmt = buildUpdateTestResultsByKeyQuery(testExecutionMapper);
+        try {
+            String sql_stmt = buildUpdateTestResultsByKeyQuery(testExecutionMapper);
+            int result = jdbcTemplate.update(sql_stmt);
+        }catch (Exception e){
+            logger.error(String.format("Unable to update created fields for test result %s", testExecutionMapper.getSCALE_EXECUTION_ID()));
+        }
+        try {
+            String sql_stmt = buildUpdateTestResultsActualStartDateByKeyQuery(testExecutionMapper);
+            int result = jdbcTemplate.update(sql_stmt);
+        }catch (Exception e){
+            logger.error(String.format("Unable to update Actual start date fields for test result %s", testExecutionMapper.getSCALE_EXECUTION_ID()));
+        }
+
+    }
+
+    private void updateDatabaseforTestScriptResults(TestExecutionMapper testExecutionMapper) {
+        String sql_stmt = buildUpdateTestScriptResultsByKeyQuery(testExecutionMapper);
         int result = jdbcTemplate.update(sql_stmt);
     }
+
+    private String buildUpdateTestScriptResultsByKeyQuery(TestExecutionMapper testExecutionMapper) {
+        DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
+        var databaseType = DatabaseUtils.defineDatabaseType(datasource);
+        String executedOn = testExecutionMapper.getEXECUTED_ON() == null ? null : "'" + testExecutionMapper.getEXECUTED_ON() + "'" ;
+        String setfields = " \"EXECUTION_DATE\" = "+ executedOn +"";
+        String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_SCRIPT_RESULT_TABLE_NAME+ "\" set "+setfields+" WHERE \"TEST_RESULT_ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        return sql_stmt;
+    }
+
 
     private String buildUpdateTestResultsByKeyQuery(TestExecutionMapper testExecutionMapper) {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
@@ -198,6 +226,18 @@ public class DatabasePostRepository {
         if(schema == null){
             sql_stmt = "UPDATE \""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
         }
+        return sql_stmt;
+    }
+
+    private String buildUpdateTestResultsActualStartDateByKeyQuery(TestExecutionMapper testExecutionMapper) {
+        DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
+        var databaseType = DatabaseUtils.defineDatabaseType(datasource);
+        String executedOn = testExecutionMapper.getEXECUTED_ON() == null ? null : "'" + testExecutionMapper.getEXECUTED_ON() + "'" ;
+        String setfields =  " \"ACTUAL_START_DATE\" = "+executedOn+"";
+        if(executedOn == null){
+            setfields =  " \"ACTUAL_START_DATE\" = "+executedOn+", "+" \"EXECUTION_DATE\" = "+executedOn+"";
+        }
+        String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
         return sql_stmt;
     }
 
@@ -221,6 +261,7 @@ public class DatabasePostRepository {
                 new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),
+                new Optional(),
                 new Optional()
         };
     }
