@@ -448,7 +448,10 @@ public class SquadToScaleMigrator {
                     if(fetchScaleTestResults != null &&
                         fetchScaleTestResults.testScriptResults() != null &&
                         fetchScaleTestResults.testScriptResults().size() > 0){
-                        List<ScaleTestScriptResults> scaleTestScriptResultsMap = fetchScaleTestResults.testScriptResults();
+                        List<ScaleTestScriptResults> scaleTestScriptResultsMapOld = fetchScaleTestResults.testScriptResults();
+                        List<ScaleTestScriptResults> scaleTestScriptResultsMap = scaleTestScriptResultsMapOld.stream()
+                                .sorted(Comparator.comparingInt(ScaleTestScriptResults::index))
+                                .toList();
                         int index = 0;
                         int length = scaleTestScriptResultsMap.size();
                         for(var executionStepRespone:testExectuionStepResponse.executionSteps()){
