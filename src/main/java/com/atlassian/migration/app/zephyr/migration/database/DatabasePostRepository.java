@@ -213,6 +213,9 @@ public class DatabasePostRepository {
         String executedOn = testExecutionMapper.getEXECUTED_ON() == null ? null : "'" + testExecutionMapper.getEXECUTED_ON() + "'" ;
         String setfields = " \"EXECUTION_DATE\" = "+ executedOn +"";
         String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_SCRIPT_RESULT_TABLE_NAME+ "\" set "+setfields+" WHERE \"TEST_RESULT_ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        if(datasource.getSchema() == null){
+            sql_stmt = "UPDATE \""+TEST_SCRIPT_RESULT_TABLE_NAME+ "\" set "+setfields+" WHERE \"TEST_RESULT_ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        }
         return sql_stmt;
     }
 
@@ -238,6 +241,9 @@ public class DatabasePostRepository {
             setfields =  " \"ACTUAL_START_DATE\" = "+executedOn+", "+" \"EXECUTION_DATE\" = "+executedOn+"";
         }
         String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        if(datasource.getSchema() == null){
+            sql_stmt = "UPDATE \""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        }
         return sql_stmt;
     }
 
