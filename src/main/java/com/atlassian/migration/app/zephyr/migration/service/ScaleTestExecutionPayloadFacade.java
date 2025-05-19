@@ -7,7 +7,9 @@ import com.atlassian.migration.app.zephyr.jira.model.AssignableUserResponse;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionCreationPayload;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleExecutionStepPayload;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationExecutionCustomFieldPayload;
+import com.atlassian.migration.app.zephyr.squad.model.FetchSquadCustomFieldValueResponse;
 import com.atlassian.migration.app.zephyr.squad.model.FetchSquadExecutionStepParsedResponse;
+import com.atlassian.migration.app.zephyr.squad.model.SquadCustomFieldValueResponse;
 import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionItemParsedResponse;
 
 import java.io.IOException;
@@ -46,7 +48,9 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
     }
 
     public ScaleExecutionCreationPayload buildPayload(
-            SquadExecutionItemParsedResponse executionData, String scaleTestCaseKey, String projectKey, FetchSquadExecutionStepParsedResponse testExectuionStepResponse) throws IOException {
+            SquadExecutionItemParsedResponse executionData, String scaleTestCaseKey, String projectKey,
+            FetchSquadExecutionStepParsedResponse testExectuionStepResponse,
+            FetchSquadCustomFieldValueResponse testExecutionCfValueResponse, List<String> projectCustomFieldNames) throws IOException {
 
         var executedByValidation = validateAssignedUser(executionData.executedBy() == null ? null:executionData.executedBy().toString(), projectKey);
         var assignedToValidation = validateAssignedUser(executionData.assignedToOrStr().toString(), projectKey);
@@ -73,6 +77,35 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
                                 ));
             }
         }
+        Map<String, String> cfValueMap = new LinkedHashMap<>();
+        cfValueMap.put(ScaleMigrationExecutionCustomFieldPayload.EXECUTED_ON, executionData.executedOnOrStr() == null? null:executionData.executedOnOrStr().toString());
+        cfValueMap.put(ScaleMigrationExecutionCustomFieldPayload.ASSIGNED_TO, assignedToValidation ? executionData.assignedTo().toString() : DEFAULT_NONE_USER);
+        cfValueMap.put(ScaleMigrationExecutionCustomFieldPayload.SQUAD_VERSION, translateSquadToScaleVersion(executionData.versionName()));
+        cfValueMap.put(ScaleMigrationExecutionCustomFieldPayload.SQUAD_CYCLE_NAME, executionData.cycleName());
+        cfValueMap.put(ScaleMigrationExecutionCustomFieldPayload.FOLDER_NAME, executionData.folderNameOrStr());
+
+        if(testExecutionCfValueResponse != null &&
+                testExecutionCfValueResponse.valueMap() != null &&
+                testExecutionCfValueResponse.valueMap().size() > 0){
+            for(Map.Entry<String, SquadCustomFieldValueResponse> cfValueEntry:testExecutionCfValueResponse.valueMap().entrySet()){
+                SquadCustomFieldValueResponse squadCustomFieldValueResponse = cfValueEntry.getValue();
+                if(!projectCustomFieldNames.contains(squadCustomFieldValueResponse.customFieldName())){
+                    continue;
+                }
+                if(squadCustomFieldValueResponse.customFieldType().equals("DATE") ||
+                    squadCustomFieldValueResponse.customFieldType().equals("DATE_TIME")){
+                    cfValueMap.put(squadCustomFieldValueResponse.customFieldName(), TimeUtils.getUTCDateforEphocTime(squadCustomFieldValueResponse.value()));
+                } else if(squadCustomFieldValueResponse.customFieldType().equals("LARGE_TEXT")) {
+                    String fieldValue = squadCustomFieldValueResponse.value();
+                    if(fieldValue.contains("\n")){
+                        fieldValue = fieldValue.replace("\n", "<br>");
+                    }
+                    cfValueMap.put(squadCustomFieldValueResponse.customFieldName(), fieldValue);
+                } else {
+                    cfValueMap.put(squadCustomFieldValueResponse.customFieldName(), squadCustomFieldValueResponse.value());
+                }
+            }
+        }
 
         return new ScaleExecutionCreationPayload(
                 translateSquadToScaleExecStatus(executionData.status().name()),
@@ -84,12 +117,14 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
                 translateSquadToScaleVersion(executionData.versionName()),
                 defects,
                 scriptResults,
-                new ScaleMigrationExecutionCustomFieldPayload(
-                        executionData.executedOnOrStr(),
-                        assignedToValidation ? executionData.assignedTo() : DEFAULT_NONE_USER,
-                        translateSquadToScaleVersion(executionData.versionName()),
-                        executionData.cycleName(),
-                        executionData.folderNameOrStr())
+                cfValueMap
+//                new ScaleMigrationExecutionCustomFieldPayload(
+//                        executionData.executedOnOrStr(),
+//                        assignedToValidation ? executionData.assignedTo() : DEFAULT_NONE_USER,
+//                        translateSquadToScaleVersion(executionData.versionName()),
+//                        executionData.cycleName(),
+//                        executionData.folderNameOrStr(),
+//                        cfValueMap)
         );
     }
 
@@ -190,7 +225,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
     }
 
     private String translateSquadToScaleVersion(String versionName) {
-        if (versionName.equalsIgnoreCase(SQUAD_VERSION_UNSCHEDULED)) {
+        if (versionName == null || versionName.equalsIgnoreCase(SQUAD_VERSION_UNSCHEDULED)) {
             return null;
         }
         return versionName;

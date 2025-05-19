@@ -10,18 +10,26 @@ public record ScaleMigrationExecutionCustomFieldPayload(
         Object assignedTo,
         Object squadVersion,
         String squadCycleName,
-        String folderName
+        String folderName,
+
+        Map<String, String> additionalProperties
 ) {
-    public static final List<String> CUSTOM_FIELDS_NAMES = List.of("executedOn", "assignedTo", "squadVersion",
-            "squadCycleName", "folderName");
+    public static final String EXECUTED_ON = "executedOn";
+    public static final String ASSIGNED_TO = "assignedTo";
+    public static final String SQUAD_VERSION = "squadVersion";
+    public static final String SQUAD_CYCLE_NAME = "squadCycleName";
+    public static final String FOLDER_NAME = "folderName";
+    public static final List<String> CUSTOM_FIELDS_NAMES = List.of(EXECUTED_ON, ASSIGNED_TO, SQUAD_VERSION,
+            SQUAD_CYCLE_NAME, FOLDER_NAME);
+
 
     public static final String ENTITY_TYPE = "TEST_EXECUTION";
 
     public static final Map<String, String> CUSTOM_FIELD_TO_TYPE = Map.of(
-            "executedOn", TYPE_SINGLE_LINE_TEXT,
-            "assignedTo", TYPE_SINGLE_LINE_TEXT,
-            "squadVersion", TYPE_SINGLE_LINE_TEXT,
-            "squadCycleName", TYPE_SINGLE_LINE_TEXT,
-            "folderName", TYPE_SINGLE_LINE_TEXT
+            EXECUTED_ON, TYPE_SINGLE_LINE_TEXT,
+            ASSIGNED_TO, TYPE_SINGLE_LINE_TEXT,
+            SQUAD_VERSION, TYPE_SINGLE_LINE_TEXT,
+            SQUAD_CYCLE_NAME, TYPE_SINGLE_LINE_TEXT,
+            FOLDER_NAME, TYPE_SINGLE_LINE_TEXT
     );
 }

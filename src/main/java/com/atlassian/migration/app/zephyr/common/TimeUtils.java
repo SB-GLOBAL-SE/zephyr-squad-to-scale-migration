@@ -3,6 +3,7 @@ package com.atlassian.migration.app.zephyr.common;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -53,6 +54,18 @@ public class TimeUtils {
             logger.warn("Date parse exception at '"+dateString+"'");
         }
         return dateString;
+    }
+
+    public static final String getUTCDateforEphocTime(String timeStampStr){
+        long timestamp = Long.parseLong(timeStampStr);
+
+        // Convert to Instant and format
+        Instant instant = Instant.ofEpochMilli(timestamp);
+        ZonedDateTime zdt = instant.atZone(ZoneId.systemDefault()); // or use ZoneId.of("UTC")
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        String formattedDate = zdt.format(formatter);
+        return formattedDate;
     }
 
     public static final String getUTCTimestampforAttachmentDateCreated(String dateString){

@@ -15,9 +15,7 @@ import com.atlassian.migration.app.zephyr.migration.testcase.TestCasePostMigrato
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
 import com.atlassian.migration.app.zephyr.scale.model.*;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
-import com.atlassian.migration.app.zephyr.squad.model.FetchSquadStatusResponse;
-import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionStatusResponse;
-import com.atlassian.migration.app.zephyr.squad.model.SquadTestStepResponse;
+import com.atlassian.migration.app.zephyr.squad.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +27,7 @@ public class SquadToScaleMigrator {
 
     private static final Logger logger = LoggerFactory.getLogger(SquadToScaleMigrator.class);
     private static final List<String> IGNORABLE_SQUAD_STATUSES = List.of("PASS", "FAIL", "WIP", "BLOCKED", "UNEXECUTED");
-
+    private static final List<String> SQUAD_CUSTOM_FIELDS_HAS_OPTIONS = List.of("CHECKBOX", "RADIO_BUTTON", "MULTI_SELECT", "SINGLE_SELECT");
     private static final int SCALE_DEFECT_DEFAULT_TYPE = 3;
     private final MigrationConfiguration config;
     private final JiraApi jiraApi;
@@ -45,6 +43,8 @@ public class SquadToScaleMigrator {
     private final TestCasePostMigrator testCasePostMigrator;
     private final TestExecutionPostMigrator testExecutionPostMigrator;
     private final List<Resettable> resettables = new ArrayList<>();
+
+    private List<String> projectCustomFieldNames = new ArrayList<>();
 
     public SquadToScaleMigrator(JiraApi jiraApi, SquadApi squadApi, ScaleApi scaleApi, AttachmentsMigrator attachmentsMigrator,
                                 TestCasePostMigrator testCasePostMigrator,
@@ -91,6 +91,8 @@ public class SquadToScaleMigrator {
             logger.info("Fetching total issues by project key...");
             var total = jiraApi.fetchTotalIssuesByProjectName(projectKey);
 
+            //resetting the project custom fields.
+            projectCustomFieldNames = new ArrayList<String>();
             var projectResponse = jiraApi.getProjectByKey(projectKey);
             if (total == 0) {
                 logger.info("Project doesn't have Squad Objects, skipping it");
@@ -107,7 +109,7 @@ public class SquadToScaleMigrator {
             scaleApi.updateTestCaseStatuses(projectResponse.id());
 
             logger.info("Creating migration Custom Fields...");
-            createMigrationCustomFields(projectKey);
+            createMigrationCustomFields(projectKey, projectResponse.id());
 
             logger.info("Creating migration Scale statuses Fields...");
             createMigrationTestResultsStatuses(projectKey);
@@ -247,7 +249,6 @@ public class SquadToScaleMigrator {
                 }
                 logger.info("Project Custom Field " + customField.name() + " created successfully.");
             }
-
         } catch (IOException exception) {
             logger.error("Failed to create project custom fields " + exception.getMessage(),
                     exception);
@@ -256,7 +257,7 @@ public class SquadToScaleMigrator {
     }
 
 
-    private void createMigrationCustomFields(String projectKey) {
+    private void createMigrationCustomFields(String projectKey, String projectId) {
         try {
 
             Map<String, List<String>> mapCustomFieldsToCreate = Map.of(
@@ -282,6 +283,44 @@ public class SquadToScaleMigrator {
                             )
                     );
                     logger.info("Migration Custom Field " + customFieldName + " created successfully.");
+                }
+            }
+            // create Migration CustomFields for Execution.
+            FetchSquadCustomFieldResponse fetchSquadCustomFieldResponse = squadApi.fetchSquadCustomFieldResponse("EXECUTION", projectId);
+            if(fetchSquadCustomFieldResponse != null && fetchSquadCustomFieldResponse.data().size() > 0){
+                for(SquadCustomFieldResponse squadCustomFieldResponse:fetchSquadCustomFieldResponse.data()){
+                    if(squadCustomFieldResponse.isActive()){
+                        List<ScaleTestCaseCustomFieldOption> options = null;
+                        if(SQUAD_CUSTOM_FIELDS_HAS_OPTIONS.contains(squadCustomFieldResponse.fieldType())){
+                            options = new LinkedList<>();
+                            if(squadCustomFieldResponse.customFieldOptionValues() != null &&
+                                squadCustomFieldResponse.customFieldOptionValues().size() > 0){
+                                int index = 1;
+                                for(Map.Entry<String, String> customFieldEntry:squadCustomFieldResponse.customFieldOptionValues().entrySet()){
+                                    options.add(new ScaleTestCaseCustomFieldOption(customFieldEntry.getValue(), index, false));
+                                    index++;
+                                }
+                            }
+                        }
+                        String customFieldName = squadCustomFieldResponse.name();
+                        var customFieldId = scaleApi.createCustomField(
+                                new ScaleCustomFieldPayload(
+                                        customFieldName,
+                                        ScaleMigrationExecutionCustomFieldPayload.ENTITY_TYPE,
+                                        projectKey,
+                                        ScaleCustomFieldPayload.SQUAD_SCALE_CUSTOM_FIELD_TYPE.get(squadCustomFieldResponse.fieldType())
+                                )
+                        );
+                        if(customFieldId != null && !customFieldId.isEmpty() && options != null && options.size() > 0) {
+                            for (var option : options) {
+                                scaleApi.addOptionToCustomField(customFieldId, option);
+                            }
+                        }
+                        if(!projectCustomFieldNames.contains(customFieldName)) {
+                            projectCustomFieldNames.add(customFieldName);
+                        }
+                        logger.info("Migration Custom Field " + customFieldName + " created successfully.");
+                    }
                 }
             }
         } catch (IOException exception) {
@@ -431,8 +470,10 @@ public class SquadToScaleMigrator {
                 logger.info("Creating test executions...");
 
                 var testExectuionStepResponse = squadApi.fetchTestExecutionStepById(execution.id());
+                var testExecutionCfValueResponse = squadApi.fetchSquadExecutionCustomFieldValueResponse(execution.id());
                 var testExecutionPayload = scaleTestExecutionPayloadFacade
-                        .buildPayload(execution, item.getValue(), projectKey, testExectuionStepResponse);
+                        .buildPayload(execution, item.getValue(), projectKey, testExectuionStepResponse,
+                                testExecutionCfValueResponse, projectCustomFieldNames);
 
                 var scaleTestExecutionCreatedPayload = scaleApi.createTestExecution(scaleCycleKey,
                         testExecutionPayload);

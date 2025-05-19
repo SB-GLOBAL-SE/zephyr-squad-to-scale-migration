@@ -16,11 +16,13 @@ public class SquadApi extends BaseApi {
 
     public static final String FETCH_SQUAD_TEST_STEP_ENDPOINT = "/rest/zapi/latest/teststep/%s";
     public static final String FETCH_SQUAD_EXECUTION_ENDPOINT = "/rest/zapi/latest/execution?issueId=%s";
+    public static final String FETCH_SQUAD_EXECUTION_CUSTOM_FIELD_VALUE_ENDPOINT = "/rest/zapi/latest/customfieldvalue/EXECUTION/%s";
     public static final String FETCH_SQUAD_STEPRESULTS_ENDPOINT = "/rest/zapi/latest/stepResult?executionId=%s";
     public static final String FETCH_ATTACHMENT_ENDPOINT = "/rest/zapi/latest/attachment/attachmentsByEntity?entityId=%s&entityType=%s";
     public static final String GET_ALL_PROJECTS_ENDPOINT = "/rest/zapi/latest/util/project-list";
     public static final String FETCH_SQUAD_EXECUTION_STATUSES = "/rest/zapi/latest/util/testExecutionStatus";
     public static final String FETCH_SQUAD_STEP_RESULTS_STATUSES = "/rest/zapi/latest/util/teststepExecutionStatus";
+    public static final String FETCH_SQUAD_EXECUTION_STEP_CUSTOM_FIELDS = "/rest/zapi/latest/customfield/globalCustomFieldsByEntityTypeAndProject?entityType=%s&projectId=%s";
     public static final String ENTITY_TYPE_TEST_EXECUTION = "execution";
     public static final String ENTITY_TYPE_TEST_STEP_RESULT = "TESTSTEPRESULT";
     public static final String ENTITY_TYPE_TEST_STEP = "TESTSTEP";
@@ -61,6 +63,12 @@ public class SquadApi extends BaseApi {
         var response = sendHttpGet(getUri(urlPath(FETCH_SQUAD_STEP_RESULTS_STATUSES)));
         List<SquadExecutionStatusResponse> listofExecutionStatus = gson.fromJson(response, new TypeToken<List<SquadExecutionStatusResponse>>(){}.getType());
         return new FetchSquadStatusResponse(listofExecutionStatus);
+    }
+
+    public FetchSquadCustomFieldValueResponse fetchSquadExecutionCustomFieldValueResponse(String entityId) throws ApiException {
+        var response = sendHttpGet(getUri(urlPath(FETCH_SQUAD_EXECUTION_CUSTOM_FIELD_VALUE_ENDPOINT, entityId)));
+        Map<String, SquadCustomFieldValueResponse> listofExecutionStatus = gson.fromJson(response, new TypeToken<Map<String, SquadCustomFieldValueResponse>>(){}.getType());
+        return new FetchSquadCustomFieldValueResponse(listofExecutionStatus);
     }
 
     public FetchSquadTestStepResponse fetchLatestTestStepByTestCaseId(String testCaseId) throws ApiException {
@@ -109,6 +117,12 @@ public class SquadApi extends BaseApi {
                         new SquadExecutionTypeResponse(statusId, executionStatusResponse.name()));
             }
         }
+    }
+
+    public FetchSquadCustomFieldResponse fetchSquadCustomFieldResponse(String entityType, String projectId) throws ApiException {
+        var response = sendHttpGet(getUri(urlPath(FETCH_SQUAD_EXECUTION_STEP_CUSTOM_FIELDS, entityType, projectId)));
+        List<SquadCustomFieldResponse> data = gson.fromJson(response, new TypeToken<List<SquadCustomFieldResponse>>(){}.getType());
+        return new FetchSquadCustomFieldResponse(data);
     }
 
     public void updateExecutionStepStatusTypes(List<SquadExecutionStatusResponse> allStatuses) {

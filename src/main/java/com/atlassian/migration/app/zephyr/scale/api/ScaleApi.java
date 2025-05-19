@@ -16,7 +16,6 @@ import java.lang.reflect.Type;
 import java.util.*;
 
 public class ScaleApi extends BaseApi {
-
     private static final Logger logger = LoggerFactory.getLogger(ScaleApi.class);
     public static final String ENABLE_PROJECT_ENDPOINT = "/rest/atm/1.0/project";
     public static final String CREATE_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield";
@@ -230,32 +229,24 @@ public class ScaleApi extends BaseApi {
     }
 
     public String createCustomField(ScaleCustomFieldPayload scaleCustomFieldPayload) throws ZephyrApiException {
-
         try {
             var response = sendHttpPost(CREATE_CUSTOM_FIELD_ENDPOINT, scaleCustomFieldPayload);
-
             var createdCustomField = gson.fromJson(response, Map.class);
             Object customFieldId =  createdCustomField.get("id");
-
             if(customFieldId instanceof Double){
                 return String.valueOf(((Double) customFieldId).longValue());
             }
-
             return String.valueOf(customFieldId);
-
         } catch (ApiException e) {
             //While creating a custom field that already exists, Scale API returns a 400 status with the
             //message "Custom field name is duplicated". Catching it here and ignoring this status
             if (e.code == 400 && e.getMessage().contains(CUSTOM_FIELD_DUPLICATED_EXPECTED_MESSAGE)) {
                 return "";
             }
-
             ScaleApiErrorLogger.logAndThrow(
                     ScaleApiErrorLogger.ERROR_CREATE_CUSTOM_FIELD, e
             );
-
             return "";
-
         }
     }
 
@@ -320,9 +311,7 @@ public class ScaleApi extends BaseApi {
 
         public static void logAndThrow(String message, ApiException e) throws ZephyrApiException {
             logger.error(message + " " + e.getMessage(), e);
-
             throw new ZephyrApiException(e);
         }
-
     }
 }

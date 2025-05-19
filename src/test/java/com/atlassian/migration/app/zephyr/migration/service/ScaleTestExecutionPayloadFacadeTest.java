@@ -13,9 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
@@ -68,13 +66,11 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 List.of("issueKey"),
                 List.of(new ScaleExecutionStepPayload(0, "status", "comment")),
-                new ScaleMigrationExecutionCustomFieldPayload(
-                        "21/Jan/25 1:05 PM",
-                        "assignee",
-                        "version",
-                        "cycle",
-                        "folder"
-                )
+                Map.of("executedOn", "21/Jan/25 1:05 PM",
+                        "assignedTo","assignee",
+                        "squadVersion", "version",
+                        "squadCycleName", "cycle",
+                        "folderName", "folder")
         );
 
 
@@ -93,7 +89,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 .thenReturn(List.of(executedByUserMock));
 
 
-        var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<String>());
 
         assertEquals(expectedScaleExecutionPayload, receivedPayload);
 
@@ -145,13 +141,11 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 List.of("issueKey"),
                 List.of(new ScaleExecutionStepPayload(0, "status", "comment")),
-                new ScaleMigrationExecutionCustomFieldPayload(
-                        "21/Jan/25 1:05 PM",
-                        "assignee",
-                        "version",
-                        "cycle",
-                        "folder"
-                )
+                Map.of("executedOn", "21/Jan/25 1:05 PM",
+                        "assignedTo","assignee",
+                        "squadVersion", "version",
+                        "squadCycleName", "cycle",
+                        "folderName", "folder")
         );
 
         var expectedScaleExecutionPayloadUnexecuted = new ScaleExecutionCreationPayload(
@@ -164,13 +158,11 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 List.of("issueKey"),
                 List.of(new ScaleExecutionStepPayload(0, "status", "comment")),
-                new ScaleMigrationExecutionCustomFieldPayload(
-                        "None",
-                        "assignee",
-                        "version",
-                        "cycle",
-                        "folder"
-                )
+                Map.of("executedOn", "None",
+                        "assignedTo","assignee",
+                        "squadVersion", "version",
+                        "squadCycleName", "cycle",
+                        "folderName", "folder")
         );
 
         var assigneeUserMock = new AssignableUserResponse(
@@ -188,13 +180,13 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 .thenReturn(List.of(executedUserMock));
 
         var receivedPayloadWip = sutTestExecFacade
-                .buildPayload(squadExecutionPayloadWipMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+                .buildPayload(squadExecutionPayloadWipMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<String>());
 
         assertEquals(expectedScaleExecutionPayloadWip, receivedPayloadWip);
 
 
         var receivedPayloadUnexecuted = sutTestExecFacade
-                .buildPayload(squadExecutionPayloadUnexecutedMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+                .buildPayload(squadExecutionPayloadUnexecutedMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<>());
 
         assertEquals(expectedScaleExecutionPayloadUnexecuted, receivedPayloadUnexecuted);
 
@@ -218,7 +210,12 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "cycle",
                 "folder",
                 List.of(new SquadExecutionDefectResponse("issueKey")));
-
+        Map<String, String> customFields = new LinkedHashMap<>();
+        customFields.put("executedOn", "21/Jan/25 1:05 PM");
+        customFields.put("assignedTo","assignee");
+        customFields.put("squadVersion", null);
+        customFields.put("squadCycleName", "cycle");
+        customFields.put("folderName", "folder");
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",
                 scaleTestCaseKeyMock,
@@ -229,13 +226,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 null,
                 List.of("issueKey"),
                 List.of(new ScaleExecutionStepPayload(0, "status", "comment")),
-                new ScaleMigrationExecutionCustomFieldPayload(
-                        "21/Jan/25 1:05 PM",
-                        "assignee",
-                        null,
-                        "cycle",
-                        "folder"
-                )
+                customFields
         );
 
         var assigneeUserMock = new AssignableUserResponse(
@@ -251,7 +242,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
                 .thenReturn(List.of(executedUserMock));
 
-        var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<>());
 
         assertEquals(expectedScaleExecutionPayload, receivedPayload);
 
@@ -286,13 +277,11 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 List.of("issueKey"),
                 List.of(new ScaleExecutionStepPayload(0, "status", "comment")),
-                new ScaleMigrationExecutionCustomFieldPayload(
-                        "21/Jan/25 1:05 PM",
-                        "None",
-                        "version",
-                        "cycle",
-                        "folder"
-                )
+                Map.of("executedOn", "21/Jan/25 1:05 PM",
+                        "assignedTo","None",
+                        "squadVersion", "version",
+                        "squadCycleName", "cycle",
+                        "folderName", "folder")
         );
 
         var executedByUserMock = new AssignableUserResponse(
@@ -307,7 +296,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("unassignable", testKeyMock))
                 .thenReturn(Collections.emptyList());
 
-        var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<>());
 
         assertEquals(expectedScaleExecutionPayload, receivedPayload);
 
@@ -342,13 +331,11 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "version",
                 List.of("issueKey"),
                 List.of(new ScaleExecutionStepPayload(0, "status", "comment")),
-                new ScaleMigrationExecutionCustomFieldPayload(
-                        "21/Jan/25 1:05 PM",
-                        "None",
-                        "version",
-                        "cycle",
-                        "folder"
-                )
+                Map.of("executedOn", "21/Jan/25 1:05 PM",
+                        "assignedTo","None",
+                        "squadVersion", "version",
+                        "squadCycleName", "cycle",
+                        "folderName", "folder")
         );
 
         var executedByUserMock = new AssignableUserResponse(
@@ -360,7 +347,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
                 .thenReturn(List.of(executedByUserMock));
 
-        var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        var receivedPayload = sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<>());
 
         assertEquals(expectedScaleExecutionPayload, receivedPayload);
 
@@ -400,9 +387,10 @@ public class ScaleTestExecutionPayloadFacadeTest {
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
                 .thenReturn(List.of(executedUserMock));
 
-        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<>());
 
-        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<>()
+        );
 
         verify(jiraApiMock, times(6))
                 .fetchAssignableUserByUsernameAndProject(any(), any());
@@ -442,9 +430,9 @@ public class ScaleTestExecutionPayloadFacadeTest {
         when(jiraApiMock.fetchAssignableUserByUsernameAndProject("executedBy", testKeyMock))
                 .thenReturn(Collections.emptyList());
 
-        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<>());
 
-        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock);
+        sutTestExecFacade.buildPayload(squadExecutionPayloadMock, scaleTestCaseKeyMock, testKeyMock, testExecutionStepResponseMock, null, new ArrayList<>());
 
         verify(jiraApiMock, times(2))
                 .fetchAssignableUserByUsernameAndProject(any(), any());
