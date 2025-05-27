@@ -9,7 +9,7 @@ public record ScaleExecutionCreationPayload(
         Object executionDate,
         Object assignedTo,
         Object comment,
-        String version,
+        Object version,
         List<String> issueLinks,
         List<ScaleExecutionStepPayload> scriptResults,
         ScaleMigrationExecutionCustomFieldPayload customFields) {

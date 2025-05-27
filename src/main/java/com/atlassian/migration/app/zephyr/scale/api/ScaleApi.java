@@ -5,14 +5,14 @@ import com.atlassian.migration.app.zephyr.common.ApiException;
 import com.atlassian.migration.app.zephyr.common.BaseApi;
 import com.atlassian.migration.app.zephyr.common.ZephyrApiException;
 import com.atlassian.migration.app.zephyr.scale.model.*;
-import com.atlassian.migration.app.zephyr.squad.model.FetchSquadStatusResponse;
-import com.atlassian.migration.app.zephyr.squad.model.SquadExecutionStatusResponse;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import org.apache.hc.core5.net.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.util.*;
 
 public class ScaleApi extends BaseApi {
@@ -21,15 +21,23 @@ public class ScaleApi extends BaseApi {
     public static final String ENABLE_PROJECT_ENDPOINT = "/rest/atm/1.0/project";
     public static final String CREATE_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield";
     public static final String ADD_OPTION_TO_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield/%s/option";
+    public static final String FETCH_TESTC_CASE_CUSTOM_FIELD_ENDPOINT = "/rest/tests/1.0/project/%s/customfields/testcase";
     public static final String CREATE_SCALE_TEST_CASE_ENDPOINT = "/rest/atm/1.0/testcase";
     public static final String SCALE_TEST_STEP_ENDPOINT = "/rest/atm/1.0/testcase/%s";
     public static final String CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT = "/rest/atm/1.0/testrun";
+    public static final String FETCH_SCALE_TEST_RUNS_ENDPOINT = "/rest/tests/1.0/testrun/search?fields=id,key,name&archived=false&maxResults=5000";
     public static final String CREATE_SCALE_TEST_RESULTS_ENDPOINT = "/rest/atm/1.0/testrun/%s/testresults";
     public static final String FETCH_SCALE_TEST_RESULTS_ENDPOINT = "/rest/tests/1.0/testresult/%s?fields=id,key,testScriptResults";
     public static final String FETCH_SCALE_RESULTS_STATUSES = "/rest/tests/1.0/testresultstatus?projectId=%s";
+    public static final String FETCH_SCALE_TESTCASE_STATUSES = "/rest/tests/1.0/testcasestatus?projectId=%s";
+    public static final String CREATE_SCALE_TESTCASE_STATUSES = "/rest/tests/1.0/testcasestatus";
+    public static final String FETCH_SCALE_TESTCASE_PRIORITY = "/rest/tests/1.0/testcasepriority?projectId=%s";
+    public static final String CREATE_SCALE_TESTCASE_PRIORITY = "/rest/tests/1.0/testcasepriority";
+    public static final String UPDATE_SCALE_RESULTS_VERSION = "/rest/tests/1.0/testresult/%s";
     public static final String CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT = "/rest/tests/1.0/testresultstatus";
     public static final String CREATE_SCALE_TEST_SCRIPT_RESULT_DEFECT_ENDPOINT = "/rest/tests/1.0/tracelink/testresult/bulk/create";
     public static final String CUSTOM_FIELD_DUPLICATED_EXPECTED_MESSAGE = "Custom field name is duplicated";
+    private static final String CREATE_SCALE_TEST_RUN_TRACELINK_ENDPOINT = "/rest/tests/1.0/tracelink/bulk/create";
 
     public ScaleApi(ApiConfiguration config) {
         super(config);
@@ -59,6 +67,14 @@ public class ScaleApi extends BaseApi {
             sendHttpPut(String.format(SCALE_TEST_STEP_ENDPOINT, key), step);
         } catch (ApiException e) {
             ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP, key), e);
+        }
+    }
+
+    public void updateTestResultVersion(String testResults, ScaleExecutionVersionPayload scaleExecutionVersionPayload) throws ZephyrApiException {
+        try {
+            sendHttpPut(String.format(UPDATE_SCALE_RESULTS_VERSION, testResults), scaleExecutionVersionPayload);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_UPDATE_SCALE_VERSION, testResults), e);
         }
     }
 
@@ -104,6 +120,21 @@ public class ScaleApi extends BaseApi {
         return null;
     }
 
+    public GetAllCyclesResponse fetchTestRunsbyProjectKey(String projectKey) throws ZephyrApiException {
+        try {
+            URIBuilder uriBuilder = new URIBuilder(config.host()+FETCH_SCALE_TEST_RUNS_ENDPOINT);
+            uriBuilder.addParameter("query", "testRun.projectKey IN (\""+projectKey+"\")");
+            var response = sendHttpGet(uriBuilder.build());
+            GetAllCyclesResponse allCyclesResponse = gson.fromJson(response, GetAllCyclesResponse.class);
+            return allCyclesResponse;
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTRUNS_ENDPOINT, projectKey), e);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
     public String createScaleTestResultsStatus(String projectId, String statusName, String statusDescription, String statusColor) throws ZephyrApiException{
         Map<String, Object> params = new HashMap<>();
         params.put("projectId", Integer.parseInt(projectId));
@@ -116,6 +147,75 @@ public class ScaleApi extends BaseApi {
             response = sendHttpPost(CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT, params);
         } catch (ApiException e) {
             ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_RESULTS_STATUS, e);
+        }
+
+        Map<String, Object> result = gson.fromJson(response, Map.class);
+        return result.get("id").toString();
+    }
+
+    public void updateTestCaseStatuses(String projectId) throws ZephyrApiException {
+        try {
+            var response = sendHttpGet(getUri(urlPath(FETCH_SCALE_TESTCASE_STATUSES, projectId)));
+            List<ScaleMigrationTestCaseStatusPayload> listOfScaleTestcaseStatuses = gson.fromJson(response, new TypeToken<List<ScaleMigrationTestCaseStatusPayload>>(){}.getType());
+            listOfScaleTestcaseStatuses.forEach(testCaseStatusPayload -> {
+                ScaleMigrationTestCaseStatusPayload.MIGRATION_TESTCASE_STATUSES.add(testCaseStatusPayload.name());
+            });
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_STATUS, projectId), e);
+        }
+
+    }
+
+    public String CreateScaleTestcaseStatus(String projectId, String name) throws ZephyrApiException{
+        Map<String, Object> params = new HashMap<>();
+        params.put("projectId", Integer.parseInt(projectId));
+        params.put("name", name);
+
+        String response = "";
+        try {
+            response = sendHttpPost(CREATE_SCALE_TESTCASE_STATUSES, params);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATING_TESTCASE_STATUS, e);
+        }
+
+        Map<String, Object> result = gson.fromJson(response, Map.class);
+        return result.get("id").toString();
+    }
+
+    public void updateTestCasePriorities(String projectId) throws ZephyrApiException {
+        try {
+            var response = sendHttpGet(getUri(urlPath(FETCH_SCALE_TESTCASE_PRIORITY, projectId)));
+            List<ScaleMigrationTestCasePriorityPayload> listofScaleResultsStatus = gson.fromJson(response, new TypeToken<List<ScaleMigrationTestCasePriorityPayload>>(){}.getType());
+            listofScaleResultsStatus.forEach(priotiy -> {
+                ScaleMigrationTestCasePriorityPayload.MIGRATION_TESTCASE_PRIORITIES.add(priotiy.name());
+            });
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_PRIORITY, projectId), e);
+        }
+
+    }
+
+    public List<ScaleTestCaseCustomField> fetchTestCaseCustomFields(String projectId) throws ZephyrApiException {
+        try {
+            var response = sendHttpGet(getUri(urlPath(FETCH_TESTC_CASE_CUSTOM_FIELD_ENDPOINT, projectId)));
+            List<ScaleTestCaseCustomField> listofScaleResultsStatus = gson.fromJson(response, new TypeToken<List<ScaleTestCaseCustomField>>(){}.getType());
+            return listofScaleResultsStatus;
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_PRIORITY, projectId), e);
+        }
+        return null;
+    }
+
+    public String CreateScaleTestcasePriority(String projectId, String name) throws ZephyrApiException{
+        Map<String, Object> params = new HashMap<>();
+        params.put("projectId", Integer.parseInt(projectId));
+        params.put("name", name);
+
+        String response = "";
+        try {
+            response = sendHttpPost(CREATE_SCALE_TESTCASE_PRIORITY, params);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATING_TESTCASE_PRIORITY, e);
         }
 
         Map<String, Object> result = gson.fromJson(response, Map.class);
@@ -152,6 +252,18 @@ public class ScaleApi extends BaseApi {
             ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_RESULTS, cycleKey), e);
         }
         return new ScalePOSTTestResultPayload(Collections.emptyList());
+    }
+
+    public boolean createTestRunTraceLinks( List<ScaleCycleTraceLinkPayload> datas) throws ZephyrApiException {
+        try {
+            var response = sendHttpPost(String.format(CREATE_SCALE_TEST_RUN_TRACELINK_ENDPOINT), datas);
+            return true;
+
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_RUN_TRACELINKS), e);
+            return false;
+        }
+
     }
 
     public ScaleTestResultCreatedPayload createTestExecution(String cycleKey, ScaleExecutionCreationPayload data)
@@ -220,6 +332,9 @@ public class ScaleApi extends BaseApi {
         public static final String ERROR_CREATE_TEST_STEP = "Error while creating Test Steps at " +
                 SCALE_TEST_STEP_ENDPOINT;
 
+        public static final String ERROR_UPDATE_SCALE_VERSION = "Error while updating version of test results at " +
+                UPDATE_SCALE_RESULTS_VERSION;
+
         public static final String ERROR_CREATE_TEST_STEP_DEFECT = "Error while creating step results defects.";
 
         public static final String ERROR_FETCHING_TEST_STEP = "Error while fetching Test Steps at " +
@@ -228,11 +343,26 @@ public class ScaleApi extends BaseApi {
         public static final String ERROR_FETCHING_TESTRESULTS_STATUS = "Error while fetching Test results status at " +
                 FETCH_SCALE_RESULTS_STATUSES;
 
+        public static final String ERROR_FETCHING_TESTCASE_PRIORITY = "Error while fetching Test Case prioirity at " +
+                FETCH_SCALE_TESTCASE_PRIORITY;
+
+        public static final String ERROR_CREATING_TESTCASE_PRIORITY = "Error while creating Test Case prioirity at " +
+                CREATE_SCALE_TESTCASE_PRIORITY;
+
+        public static final String ERROR_FETCHING_TESTCASE_STATUS = "Error while fetching Test Case status at " +
+                FETCH_SCALE_TESTCASE_STATUSES;
+
+        public static final String ERROR_CREATING_TESTCASE_STATUS = "Error while creating Test Case status at " +
+                CREATE_SCALE_TESTCASE_STATUSES;
+
         public static final String ERROR_FETCHING_TESTRESULTS = "Error while fetching Test results at " +
                 FETCH_SCALE_TEST_RESULTS_ENDPOINT;
 
         public static final String ERROR_CREATE_TEST_CYCLE = "Error while creating Test Cycle at "
                 + CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT;
+
+        public static final String ERROR_FETCHING_TESTRUNS_ENDPOINT = "Error while fetching Test runs at " +
+                FETCH_SCALE_TEST_RUNS_ENDPOINT;
 
         public static final String ERROR_CREATE_TEST_RESULTS_STATUS = "Error while creating Test results status at "
                 + CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT;
@@ -244,6 +374,8 @@ public class ScaleApi extends BaseApi {
                 + CREATE_CUSTOM_FIELD_ENDPOINT;
         public static final String ERROR_ENABLE_PROJECT = "Error while enabling Project as Scale project at "
                 + ENABLE_PROJECT_ENDPOINT;
+        public static final String ERROR_CREATE_TEST_RUN_TRACELINKS = "Error while creating tracelinks Project as Scale project at "
+                + CREATE_SCALE_TEST_RUN_TRACELINK_ENDPOINT; ;
 
         public static void logAndThrow(String message, ApiException e) throws ZephyrApiException {
             logger.error(message + " " + e.getMessage(), e);

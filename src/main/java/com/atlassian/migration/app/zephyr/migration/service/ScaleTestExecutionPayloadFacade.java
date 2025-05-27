@@ -24,10 +24,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
     private static final String SCALE_EXEC_STATUS_IN_PROGRESS = "In Progress";
     private static final String SCALE_EXEC_STATUS_NOT_EXECUTED = "Not Executed";
 
-    private final Map<String, String> statusTranslation = Map.of(
-            SQUAD_STATUS_WIP, SCALE_EXEC_STATUS_IN_PROGRESS,
-            SQUAD_STATUS_UNEXECUTED, SCALE_EXEC_STATUS_NOT_EXECUTED
-    );
+    public final Map<String, String> statusTranslation = new HashMap<>();
 
     private final Set<String> assignableUsers = new HashSet<>();
     private final Set<String> unassignableUsers = new HashSet<>(Set.of(DEFAULT_NONE_USER));
@@ -35,6 +32,8 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
 
     public ScaleTestExecutionPayloadFacade(JiraApi jiraApi) {
         this.jiraApi = jiraApi;
+        statusTranslation.put(SQUAD_STATUS_WIP, SCALE_EXEC_STATUS_IN_PROGRESS);
+        statusTranslation.put(SQUAD_STATUS_UNEXECUTED, SCALE_EXEC_STATUS_NOT_EXECUTED);
     }
 
     @Override
@@ -85,10 +84,10 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
                 defects,
                 scriptResults,
                 new ScaleMigrationExecutionCustomFieldPayload(
-                        executionData.executedOnOrStr(),
-                        assignedToValidation ? executionData.assignedTo() : DEFAULT_NONE_USER,
-                        translateSquadToScaleVersion(executionData.versionName()),
-                        executionData.cycleName(),
+//                        executionData.executedOnOrStr(),
+//                        assignedToValidation ? executionData.assignedTo() : DEFAULT_NONE_USER,
+//                        translateSquadToScaleVersion(executionData.versionName()),
+//                        executionData.cycleName(),
                         executionData.folderNameOrStr())
         );
     }
@@ -186,7 +185,11 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
 
     private String translateSquadToScaleExecStatus(String squadStatusName) {
         var squadStatusNameLower = squadStatusName.toLowerCase();
-        return statusTranslation.getOrDefault(squadStatusNameLower, squadStatusName);
+        if(statusTranslation.containsKey(squadStatusNameLower)) {
+            return statusTranslation.getOrDefault(squadStatusNameLower, squadStatusName);
+        }else{
+            return statusTranslation.getOrDefault(squadStatusName, squadStatusName);
+        }
     }
 
     private String translateSquadToScaleVersion(String versionName) {

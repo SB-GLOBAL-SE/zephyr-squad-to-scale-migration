@@ -7,10 +7,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.supercsv.cellprocessor.Optional;
+import org.supercsv.cellprocessor.ParseBool;
 import org.supercsv.cellprocessor.ParseInt;
+import org.supercsv.cellprocessor.ParseLong;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvBeanReader;
+import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvBeanReader;
+import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 
 import java.io.FileReader;
@@ -19,6 +23,8 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.List;
 
 
 public class DatabasePostRepository {
@@ -28,6 +34,9 @@ public class DatabasePostRepository {
 
     private static final String TEST_CASE_TABLE_NAME = "AO_4D28DD_TEST_CASE";
     private static final String TEST_EXECUTION_TABLE_NAME = "AO_4D28DD_TEST_RESULT";
+    private static final String ATTACHMENT_TABLE_NAME = "AO_4D28DD_ATTACHMENT";
+    private static final String TEST_SCRIPT_RESULT_TABLE_NAME = "AO_4D28DD_TEST_SCRIPT_RESULT";
+
     private final String testcaseCsvFile;
     private final String testResultCsvFile;
 
@@ -87,6 +96,8 @@ public class DatabasePostRepository {
                 while ((testExecutionMapper = beanReader.read(TestExecutionMapper.class, header, processors)) != null) {
                     try {
                         updateDatabaseforTestResults(testExecutionMapper);
+                        updateDatabaseforTestScriptResults(testExecutionMapper);
+
                         logger.info("Updated fields for test results/execution: "+testExecutionMapper.getSCALE_EXECUTION_ID());
                     }catch (Exception e){
                         logger.error("Updating failed for test results: "+testExecutionMapper.getSCALE_EXECUTION_ID(), e.getMessage());
@@ -101,15 +112,108 @@ public class DatabasePostRepository {
         }
     }
 
+    public void updateAttachmentRecords(String attachmentsFileName){
+        try {
+            try {
+                Path destinationPath = getCurrentPath().resolve(attachmentsFileName);
+                try (ICsvListReader listReader = new CsvListReader(new FileReader(destinationPath.toFile()), CsvPreference.STANDARD_PREFERENCE)) {
+                    // Read the header (if present) and skip it
+                    listReader.getHeader(true);
+
+                    List<String> row;
+                    while ((row = listReader.read()) != null) {
+                        // Process each row as a List of Strings
+                        createrow(row);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }catch (Exception e){
+                logger.error("error occurred while reading test execution mapped fields."+e.getMessage());
+            }
+        }catch (Exception e){
+            logger.error("error occurred while reading test execution mapped fields."+e.getMessage());
+        }
+    }
+
+    private void createrow(List<String> row) {
+        DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
+        String fileName = row.get(0) == null ? null : "'"+row.get(0)+"'";
+        Integer fileSize = row.get(1) == null ? null : Integer.parseInt(row.get(1));
+        String name = row.get(2) == null ? null : "'"+row.get(2)+"'";
+        Integer projectId = row.get(3) == null ? null : Integer.parseInt(row.get(3));
+        String user = row.get(4) == null ? null : "'"+row.get(4)+"'";
+        Integer temp = Boolean.parseBoolean(row.get(5)) ? 1 : 0;
+        String createdOn = row.get(6) == null ? null : "'"+row.get(6)+"'";
+        String mimetype = row.get(7) == null ? null : "'"+row.get(7)+"'";
+
+        Integer testcaseId = row.get(8) == null ? null : Integer.parseInt(row.get(8));
+        Integer stepId = row.get(9) == null ? null : Integer.parseInt(row.get(9));
+        Integer testresultId = row.get(10) == null ? null : Integer.parseInt(row.get(10));
+        Integer scriptResultsId = row.get(11) == null ? null : Integer.parseInt(row.get(11));
+        String insertQuery = "INSERT INTO "+datasource.getSchema()+".\""+ATTACHMENT_TABLE_NAME+"\" (FILE_NAME, FILE_SIZE, NAME, PROJECT_ID, USER_KEY, TEMPORARY, CREATED_ON, MIME_TYPE, TEST_CASE_ID, STEP_ID, TEST_RESULT_ID, TEST_SCRIPT_RESULT_ID) "
+                + "VALUES ("+
+                fileName +", " +
+                fileSize+ ", " +
+                name+", " +
+                projectId+", " +
+                user+", " +
+                temp+", " +
+                createdOn+", " +
+                mimetype+", " +
+                testcaseId +", " +
+                stepId+", " +
+                testresultId+", " +
+                scriptResultsId+")";
+        jdbcTemplate.execute(insertQuery);
+    }
+
     private void updateDatabaseforTestResults(TestExecutionMapper testExecutionMapper) {
-        String sql_stmt = buildUpdateTestResultsByKeyQuery(testExecutionMapper);
+        try {
+            String sql_stmt = buildUpdateTestResultsByKeyQuery(testExecutionMapper);
+            int result = jdbcTemplate.update(sql_stmt);
+        }catch (Exception e){
+            logger.error(String.format("Unable to update created fields for test result %s", testExecutionMapper.getSCALE_EXECUTION_ID()));
+        }
+        try {
+            String sql_stmt = buildUpdateTestResultsActualStartDateByKeyQuery(testExecutionMapper);
+            int result = jdbcTemplate.update(sql_stmt);
+        }catch (Exception e){
+            logger.error(String.format("Unable to update Actual start date fields for test result %s", testExecutionMapper.getSCALE_EXECUTION_ID()));
+        }
+
+    }
+
+    private void updateDatabaseforTestScriptResults(TestExecutionMapper testExecutionMapper) {
+        String sql_stmt = buildUpdateTestScriptResultsByKeyQuery(testExecutionMapper);
         int result = jdbcTemplate.update(sql_stmt);
+    }
+
+    private String buildUpdateTestScriptResultsByKeyQuery(TestExecutionMapper testExecutionMapper) {
+        DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
+        var databaseType = DatabaseUtils.defineDatabaseType(datasource);
+        String executedOn = testExecutionMapper.getEXECUTED_ON() == null ? null : "'" + testExecutionMapper.getEXECUTED_ON() + "'" ;
+        String setfields = " \"EXECUTION_DATE\" = "+ executedOn +"";
+        String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_SCRIPT_RESULT_TABLE_NAME+ "\" set "+setfields+" WHERE \"TEST_RESULT_ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        return sql_stmt;
     }
 
     private String buildUpdateTestResultsByKeyQuery(TestExecutionMapper testExecutionMapper) {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
         var databaseType = DatabaseUtils.defineDatabaseType(datasource);
         String setfields = " \"CREATED_BY\" = '"+testExecutionMapper.getCREATED_BY()+"', \"CREATED_ON\" = '"+testExecutionMapper.getCREATED_ON()+"'";
+        String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
+        return sql_stmt;
+    }
+
+    private String buildUpdateTestResultsActualStartDateByKeyQuery(TestExecutionMapper testExecutionMapper) {
+        DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
+        var databaseType = DatabaseUtils.defineDatabaseType(datasource);
+        String executedOn = testExecutionMapper.getEXECUTED_ON() == null ? null : "'" + testExecutionMapper.getEXECUTED_ON() + "'" ;
+        String setfields =  " \"ACTUAL_START_DATE\" = "+executedOn+"";
+        if(executedOn == null){
+            setfields =  " \"ACTUAL_START_DATE\" = "+executedOn+", "+" \"EXECUTION_DATE\" = "+executedOn+"";
+        }
         String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
         return sql_stmt;
     }
@@ -134,6 +238,7 @@ public class DatabasePostRepository {
                 new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),
                 new org.supercsv.cellprocessor.Optional(),
+                new Optional(),
                 new Optional()
         };
     }

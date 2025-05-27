@@ -3,6 +3,7 @@ package com.atlassian.migration.app.zephyr.migration;
 import com.atlassian.migration.app.zephyr.common.DataSourceFactory;
 import com.atlassian.migration.app.zephyr.common.ProgressBarUtil;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
+import com.atlassian.migration.app.zephyr.jira.model.JIRAVersionResponse;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
 import com.atlassian.migration.app.zephyr.migration.database.DatabasePostRepository;
 import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionPostMigrator;
@@ -24,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationTestCaseCustomFieldPayload.MIGRATION_JIRA_SCALE_CUSTOM_FIELD_TYPES;
 
 public class SquadToScaleMigrator {
 
@@ -60,7 +63,7 @@ public class SquadToScaleMigrator {
 
         resettables.addAll(List.of(scaleCycleService, scaleTestExecutionPayloadFacade));
 
-        this.scaleTestCaseFacade = new ScaleTestCasePayloadFacade(jiraApi);
+        this.scaleTestCaseFacade = new ScaleTestCasePayloadFacade(jiraApi, scaleApi);
         this.attachmentsMigrator = attachmentsMigrator;
         this.testCasePostMigrator = testCasePostMigrator;
         this.testExecutionPostMigrator = testExecutionPostMigrator;
@@ -75,7 +78,8 @@ public class SquadToScaleMigrator {
 
             for (Option option : projects) {
                 logger.info("Project progress: " + ProgressBarUtil.getProgressBar(projectIndex++, projects.size(), startTimeMillis));
-                runMigration(jiraApi.getProjectById(option.value()).key());
+                String projectKey = jiraApi.getProjectById(option.value()).key();
+                runMigration(projectKey);
                 reset();
             }
 
@@ -91,6 +95,7 @@ public class SquadToScaleMigrator {
             logger.info("Fetching total issues by project key...");
             var total = jiraApi.fetchTotalIssuesByProjectName(projectKey);
 
+            var projectResponse = jiraApi.getProjectByKey(projectKey);
             if (total == 0) {
                 logger.info("Project doesn't have Squad Objects, skipping it");
                 return;
@@ -102,10 +107,18 @@ public class SquadToScaleMigrator {
             scaleApi.enableProject(new EnableProjectPayload(projectKey, true));
 
             logger.info("Creating migration Custom Fields...");
-            createMigrationCustomFields(projectKey);
+            createMigrationCustomFields(projectKey, projectResponse.id());
 
             logger.info("Creating migration Scale statuses Fields...");
             createMigrationTestResultsStatuses(projectKey);
+
+            logger.info("updating priorities & Statuses.");
+            scaleApi.updateTestCasePriorities(projectResponse.id());
+            scaleApi.updateTestCaseStatuses(projectResponse.id());
+
+            var jiraversions = jiraApi.fetchJiraVersionsByProject(projectKey);
+            JIRAVersionMap jiraVersionMap = new JIRAVersionMap();
+            jiraVersionMap.putAll(jiraversions.stream().collect(Collectors.toMap(JIRAVersionResponse::name, JIRAVersionResponse::id)));
 
             var startAt = 0;
             long startTimeMillis = System.currentTimeMillis();
@@ -120,10 +133,12 @@ public class SquadToScaleMigrator {
                 logger.info("Issue progress: "
                         + ProgressBarUtil.getProgressBar(startAt, total, startTimeMillis));
 
-                processPage(startAt, projectKey, squadToScaleEntitiesMap);
+                processPage(startAt, projectKey, projectResponse.id(), squadToScaleEntitiesMap, jiraVersionMap);
 
                 startAt += config.pageSteps();
             }
+
+            scaleCycleService.updateIssueLinksforCycle(projectKey);
 
             logger.info("Post migrion steps started, attachments copy and export of mappings.");
             attachmentsMigrator.export(squadToScaleEntitiesMap, projectKey);
@@ -136,6 +151,7 @@ public class SquadToScaleMigrator {
                 DatabasePostRepository databasePostRepository = new DatabasePostRepository(dataSource, config.testCaseCSVFile(), config.testExecutionCSVFile());
                 databasePostRepository.updateTestCaseFields();
                 databasePostRepository.updateTestResultsFields();
+                databasePostRepository.updateAttachmentRecords(config.attachmentsMappedCsvFile());
             }
             logger.info("Issue progress: "
                     + ProgressBarUtil.getProgressBar(total, total, startTimeMillis));
@@ -145,7 +161,7 @@ public class SquadToScaleMigrator {
         }
     }
 
-    private void processPage(int startAt, String projectKey, SquadToScaleEntitiesMap squadToScaleEntitiesMap) {
+    private void processPage(int startAt, String projectKey, String projectId, SquadToScaleEntitiesMap squadToScaleEntitiesMap, JIRAVersionMap jiraVersionMap) {
         try {
 
             logger.info("Fetching issues starting at " + startAt + "...");
@@ -157,8 +173,8 @@ public class SquadToScaleMigrator {
 
             logger.info("Fetched " + issues.size() + " issues.");
 
-            var testCaseMap = createScaleTestCases(issues, projectKey);
-            updateStepsAndPostExecution(testCaseMap, projectKey, squadToScaleEntitiesMap);
+            var testCaseMap = createScaleTestCases(issues, projectKey, projectId);
+            updateStepsAndPostExecution(testCaseMap, projectKey, squadToScaleEntitiesMap, jiraVersionMap);
             squadToScaleEntitiesMap.testCaseMap().putAll(testCaseMap);
         } catch (IOException exception) {
             logger.error("Failed to process page with start at: " + startAt + " " + exception.getMessage(), exception);
@@ -174,20 +190,33 @@ public class SquadToScaleMigrator {
 
             var tobeCreatedStatuses = new LinkedHashMap<String, SquadExecutionStatusResponse>();
             var scaleTestResultsStatuses = new LinkedHashMap<String, ScaleResultsStatus>();
+            var scaleTestResultsIgnoreCaseStatuses = new LinkedHashMap<String, String>();
 
             FetchScaleResultsStatusesResponse fetchscaleTestResultsStatuses = scaleApi.fetchTestResultsStatuses(projectResponse.id());
             if(fetchscaleTestResultsStatuses != null && fetchscaleTestResultsStatuses.data() != null){
                 fetchscaleTestResultsStatuses.data().forEach( scaleResultsStatus -> {
                     scaleTestResultsStatuses.put(scaleResultsStatus.name(), scaleResultsStatus);
+                    scaleTestResultsIgnoreCaseStatuses.put(scaleResultsStatus.name().toLowerCase(), scaleResultsStatus.name());
                 });
             }
+
             // checking for SQUAD Execution statuses which are not part of scale test results statuses
             if(squadExecutionStatuses != null && squadExecutionStatuses.data() != null){
                 squadApi.updateExecutionStatusTypes(squadExecutionStatuses.data());
                 squadExecutionStatuses.data().forEach( executionStatus -> {
                     String statusName = executionStatus.name();
-                    if(!IGNORABLE_SQUAD_STATUSES.contains(statusName) && !scaleTestResultsStatuses.containsKey(statusName)) {
-                        tobeCreatedStatuses.put(statusName, executionStatus);
+                    if(config.ignoreTestResultsStatusCase()){
+                        if(!IGNORABLE_SQUAD_STATUSES.contains(statusName)){
+                            if(!scaleTestResultsIgnoreCaseStatuses.containsKey(statusName.toLowerCase())) {
+                                tobeCreatedStatuses.put(statusName, executionStatus);
+                            }else{
+                                scaleTestExecutionPayloadFacade.statusTranslation.put(statusName, scaleTestResultsIgnoreCaseStatuses.get(statusName.toLowerCase()));
+                            }
+                        }
+                    }else {
+                        if (!IGNORABLE_SQUAD_STATUSES.contains(statusName) && !scaleTestResultsStatuses.containsKey(statusName)) {
+                            tobeCreatedStatuses.put(statusName, executionStatus);
+                        }
                     }
                 });
             }
@@ -197,8 +226,18 @@ public class SquadToScaleMigrator {
                 squadApi.updateExecutionStepStatusTypes(squadStepResultsStatuses.data());
                 squadStepResultsStatuses.data().forEach( executionStatus -> {
                     String statusName = executionStatus.name();
-                    if(!IGNORABLE_SQUAD_STATUSES.contains(statusName) && !scaleTestResultsStatuses.containsKey(statusName)) {
-                        tobeCreatedStatuses.put(statusName, executionStatus);
+                    if(config.ignoreTestResultsStatusCase()){
+                        if(!IGNORABLE_SQUAD_STATUSES.contains(statusName)){
+                            if(!scaleTestResultsIgnoreCaseStatuses.containsKey(statusName.toLowerCase())) {
+                                tobeCreatedStatuses.put(statusName, executionStatus);
+                            }else{
+                                scaleTestExecutionPayloadFacade.statusTranslation.put(statusName, scaleTestResultsIgnoreCaseStatuses.get(statusName.toLowerCase()));
+                            }
+                        }
+                    }else {
+                        if(!IGNORABLE_SQUAD_STATUSES.contains(statusName) && !scaleTestResultsStatuses.containsKey(statusName)) {
+                            tobeCreatedStatuses.put(statusName, executionStatus);
+                        }
                     }
                 });
             }
@@ -218,27 +257,48 @@ public class SquadToScaleMigrator {
         }
     }
 
-    private void createProjectCustomFields(String projectKey){
+    private void createProjectCustomFields(String projectKey, String id){
         try{
             var projectCustomFields = ScaleProjectTestCaseCustomFieldPayload.CUSTOM_FIELD_ID_TO_NAMES;
-
+            var testCustomFields = scaleApi.fetchTestCaseCustomFields(id);
+            Map<String, ScaleTestCaseCustomField> fieldNameAndIds = new HashMap<>();
+            if(testCustomFields != null && testCustomFields.size() > 0){
+                fieldNameAndIds = testCustomFields.stream()
+                        .filter(field -> !field.archived()) // Filter based on name
+                        .collect(Collectors.toMap(ScaleTestCaseCustomField::name,
+                                field -> field));
+            }
             for(var customField : projectCustomFields.values()){
-                logger.info("Creating Project Custom Field " + customField.name() + " ...");
+                String customFieldName = customField.name();
+                if(fieldNameAndIds.containsKey(customFieldName)){
+                    ScaleTestCaseCustomField scaleTestCaseCustomField = fieldNameAndIds.get(customFieldName);
+                    ScaleProjectTestCaseCustomFieldPayload.SCALE_CUSTOMFIELD_NAME_ID.put(customFieldName, String.valueOf(scaleTestCaseCustomField.id()));
+                    if(scaleTestCaseCustomField.options() != null && scaleTestCaseCustomField.options().size() > 0) {
+                        ScaleProjectTestCaseCustomFieldPayload.SCALE_CUSTOMFIELD_NAME_OPTIONS.put(customFieldName,
+                                scaleTestCaseCustomField.options().stream().map(ScaleTestCaseCustomFieldOption::name).collect(Collectors.toSet()));
+                    }
+                    continue;
+                }
+                logger.info("Creating Project Custom Field " + customFieldName + " ...");
                 var customFieldId = scaleApi.createCustomField(
                         new ScaleCustomFieldPayload(
-                                customField.name(),
+                                customFieldName,
                                 "TEST_CASE",
                                 projectKey,
                                 customField.type()
                         ));
-
+                ScaleProjectTestCaseCustomFieldPayload.SCALE_CUSTOMFIELD_NAME_ID.put(customFieldName, customFieldId);
                 if (customFieldId != null && !customFieldId.isBlank()
                         && customField.type().equals(ScaleCustomFieldPayload.SINGLE_CHOICE_SELECT_LIST)){
+                    Set<String> options = new HashSet<>();
                     for(var option : customField.options()){
                         scaleApi.addOptionToCustomField(customFieldId, option);
+                        options.add(option.name());
                     }
+                    ScaleProjectTestCaseCustomFieldPayload.SCALE_CUSTOMFIELD_NAME_OPTIONS.put(customFieldName,
+                        options);
                 }
-                logger.info("Project Custom Field " + customField.name() + " created successfully.");
+                logger.info("Project Custom Field " + customFieldName + " created successfully.");
             }
 
         } catch (IOException exception) {
@@ -248,10 +308,8 @@ public class SquadToScaleMigrator {
         }
     }
 
-
-    private void createMigrationCustomFields(String projectKey) {
+    private void createMigrationCustomFields(String projectKey, String id) {
         try {
-
             Map<String, List<String>> mapCustomFieldsToCreate = Map.of(
                     ScaleMigrationTestCaseCustomFieldPayload.ENTITY_TYPE, ScaleMigrationTestCaseCustomFieldPayload.CUSTOM_FIELDS_NAMES,
                     ScaleMigrationExecutionCustomFieldPayload.ENTITY_TYPE, ScaleMigrationExecutionCustomFieldPayload.CUSTOM_FIELDS_NAMES
@@ -266,17 +324,38 @@ public class SquadToScaleMigrator {
                 for (var customFieldName : customFieldToCreate.getValue()) {
                     logger.info("Creating Migration Custom Field " + customFieldName + " ...");
 
-                    scaleApi.createCustomField(
+                    String type = customFieldToType.get(customFieldName);
+                    String customFieldId = scaleApi.createCustomField(
                             new ScaleCustomFieldPayload(
                                     customFieldName,
                                     customFieldToCreate.getKey(),
                                     projectKey,
-                                    customFieldToType.get(customFieldName)
+                                    type
                             )
                     );
+
                     logger.info("Migration Custom Field " + customFieldName + " created successfully.");
                 }
             }
+
+            createProjectCustomFields(projectKey, id);
+//            var customFieldResponse = jiraApi.fetchCustomFieldsFromProjectByProjectId(id);
+//            if(customFieldResponse != null && customFieldResponse.size() > 0){
+//                for(var customField:customFieldResponse){
+//                    logger.info("Creating Migration Custom Field " + customField.name() + " ...");
+//
+//                    scaleApi.createCustomField(
+//                            new ScaleCustomFieldPayload(
+//                                    customField.name(),
+//                                    ScaleMigrationTestCaseCustomFieldPayload.ENTITY_TYPE,
+//                                    projectKey,
+//                                    MIGRATION_JIRA_SCALE_CUSTOM_FIELD_TYPES.get(customField.type())
+//                            )
+//                    );
+//                    logger.info("Migration Custom Field " + customField.name() + " created successfully.");
+//                }
+//            }
+
         } catch (IOException exception) {
             logger.error("Failed to create migration custom fields " + exception.getMessage(),
                     exception);
@@ -285,17 +364,16 @@ public class SquadToScaleMigrator {
     }
 
     private SquadToScaleTestCaseMap createScaleTestCases(List<JiraIssuesResponse> issues, String
-            projectKey) throws IOException {
+            projectKey, String projectId) throws IOException {
         try {
             var map = new SquadToScaleTestCaseMap();
-
             for (var issue : issues) {
-                var scaleTestCaseKey = createTestCaseForIssue(issue, projectKey);
-//                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key()), scaleTestCaseKey);
+                var scaleTestCaseKey = createTestCaseForIssue(issue, projectKey, projectId);
                 String creatorKey = (issue.fields().creator != null && issue.fields().creator.key() != null)
                         ? issue.fields().creator.key()
                         : null;
-                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key(), creatorKey, issue.fields().created, null, issue.fields().updated), scaleTestCaseKey);
+                var issueLinks = this.scaleTestCaseFacade.getIssueLinksIssueIds(issue);
+                map.put(new SquadToScaleTestCaseMap.TestCaseMapKey(issue.id(), issue.key(), creatorKey, issue.fields().created, null, issue.fields().updated, issueLinks), scaleTestCaseKey);
             }
             return map;
         } catch (IOException exception) {
@@ -304,10 +382,21 @@ public class SquadToScaleMigrator {
         }
     }
 
-    private String createTestCaseForIssue(JiraIssuesResponse issue, String projectKey) throws
+    private String createTestCaseForIssue(JiraIssuesResponse issue, String projectKey, String projectId) throws
             IOException {
 
         try {
+            String sanitizeStatus = scaleTestCaseFacade.sanitizeStatus(issue.fields().status);
+            if(sanitizeStatus != null && !sanitizeStatus.isEmpty() && !ScaleMigrationTestCaseStatusPayload.MIGRATION_TESTCASE_STATUSES.contains(sanitizeStatus)){
+                String id = scaleApi.CreateScaleTestcaseStatus(projectId, sanitizeStatus);
+                ScaleMigrationTestCaseStatusPayload.MIGRATION_TESTCASE_STATUSES.add(sanitizeStatus);
+            }
+
+            String sanitizepriority = scaleTestCaseFacade.sanitizePriority(issue.fields().priority);
+            if(sanitizepriority != null && !sanitizepriority.isEmpty() && !ScaleMigrationTestCasePriorityPayload.MIGRATION_TESTCASE_PRIORITIES.contains(sanitizepriority)){
+                String id = scaleApi.CreateScaleTestcasePriority(projectId, sanitizepriority);
+                ScaleMigrationTestCasePriorityPayload.MIGRATION_TESTCASE_PRIORITIES.add(sanitizepriority);
+            }
             ScaleTestCaseCreationPayload testCasePayload = this.scaleTestCaseFacade.createTestCasePayload(issue, projectKey);
 
             var scaleTestCaseKey = scaleApi.createTestCases(testCasePayload);
@@ -321,8 +410,8 @@ public class SquadToScaleMigrator {
         }
     }
 
-    private void updateStepsAndPostExecution(SquadToScaleTestCaseMap
-                                                                        testCaseMap, String projectKey, SquadToScaleEntitiesMap squadToScaleEntitiesMap) throws IOException {
+    private void updateStepsAndPostExecution(SquadToScaleTestCaseMap testCaseMap, String projectKey,
+                                             SquadToScaleEntitiesMap squadToScaleEntitiesMap, JIRAVersionMap jiraVersionMap) throws IOException {
         try {
             var orderedIssueList = testCaseMap.getListOfAllEntriesOrdered();
 
@@ -334,7 +423,7 @@ public class SquadToScaleMigrator {
             var squadToScaleExecutionStepMap = new SquadToScaleExecutionStepMap();
             for (var testCaseItem : orderedIssueList) {
                 testStepMap.putAll(updateStepsForTestCase(testCaseItem));
-                testExecutionMap.putAll(createTestExecutionForTestCase(testCaseItem, projectKey, squadToScaleExecutionStepMap));
+                testExecutionMap.putAll(createTestExecutionForTestCase(testCaseItem, projectKey, squadToScaleExecutionStepMap, jiraVersionMap));
             }
 
             logger.info("Updated steps and created test executions for " + orderedIssueList.size() + " issues.");
@@ -388,7 +477,8 @@ public class SquadToScaleMigrator {
 
     private SquadToScaleTestExecutionMap createTestExecutionForTestCase
             (Map.Entry<SquadToScaleTestCaseMap.TestCaseMapKey,
-                    String> item, String projectKey, SquadToScaleExecutionStepMap squadToScaleExecutionStepMap) throws IOException {
+                    String> item, String projectKey, SquadToScaleExecutionStepMap squadToScaleExecutionStepMap,
+                    JIRAVersionMap jiraVersionMap) throws IOException {
         try {
             logger.info("Fetching latest Squad execution for test case " + item.getKey().testCaseId() + "...");
             var execData = squadApi.fetchLatestExecutionByIssueId(item.getKey().testCaseId());
@@ -417,8 +507,16 @@ public class SquadToScaleMigrator {
 
                 var scaleTestExecutionCreatedPayload = scaleApi.createTestExecution(scaleCycleKey,
                         testExecutionPayload);
+                if(item.getKey().issueLinks() != null && item.getKey().issueLinks().size() > 0) {
+                    scaleCycleService.addIssueLinkstoCycleService(scaleCycleKey, new HashSet<>(item.getKey().issueLinks()));
+                }
 //                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id()),
-                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id(), execution.createdBy(), execution.createdOn(), null, null),
+                if(jiraVersionMap.containsKey(testExecutionPayload.version())){
+                    String jiraVersionId = jiraVersionMap.get(testExecutionPayload.version());
+                    ScaleExecutionVersionPayload scaleExecutionVersionPayload = new ScaleExecutionVersionPayload(Integer.parseInt(scaleTestExecutionCreatedPayload.id()), jiraVersionId);
+                    scaleApi.updateTestResultVersion(scaleTestExecutionCreatedPayload.id(), scaleExecutionVersionPayload);
+                }
+                testExecutionMap.put(new SquadToScaleTestExecutionMap.TestExecutionMapKey(execution.id(), execution.createdBy(), execution.createdOn(), null, null, execution.executedOn() == null ? null : execution.executedOn().toString()),
                         scaleTestExecutionCreatedPayload.id());
 
                 // fetching Step Results or Execution Step Mapping

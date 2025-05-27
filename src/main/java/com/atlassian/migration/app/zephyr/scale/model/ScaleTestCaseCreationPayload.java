@@ -10,6 +10,9 @@ public record ScaleTestCaseCreationPayload(
         List<String> labels,
         String owner,
         List<String> issueLinks,
+        String priority,
+        String status,
+        String component,
         Map<String, Object> customFields
 ) {
 }

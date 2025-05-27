@@ -12,5 +12,6 @@ public record MigrationConfiguration(
         String jiraDateTimeFormat,
         String databaseType,
         Boolean updateDatabaseFieldsPostMigration,
+        Boolean ignoreTestResultsStatusCase,
         String attachmentsBaseFolder) {
 }

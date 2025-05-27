@@ -19,7 +19,8 @@ public class SquadToScaleTestCaseMap extends HashMap<SquadToScaleTestCaseMap.Tes
             Object createdBy,
             String createdOn,
             String modifiedBy,
-            String modifiedOn
+            String modifiedOn,
+            List<String> issueLinks
     ){}
 
 

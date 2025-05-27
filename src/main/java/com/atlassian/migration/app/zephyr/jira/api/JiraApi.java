@@ -21,6 +21,7 @@ public class JiraApi extends BaseApi {
     public static final String GET_PROJECT_BY_KEY_OR_ID_ENDPOINT = "/rest/api/2/project/%s";
     public static final String GET_PROJECT_WITH_HISTORICAL_KEYS = GET_PROJECT_BY_KEY_OR_ID_ENDPOINT + "?expand=projectKeys";
     public static final String GET_ISSUE_BY_ID_ENDPOINT = "/rest/api/2/issue/%s";
+    public static final String GET_VERSIONS_BY_PROJECT_ENDPOINT = "/rest/api/2/project/%s/versions";
     public static final String RENDER_JIRA_TEXT_FORMATTING = "/rest/api/1.0/render";
     public static final String FETCH_PROJECT_CFS = "/rest/api/2/customFields";
 
@@ -49,6 +50,8 @@ public class JiraApi extends BaseApi {
         var response = sendHttpGet(getUri(urlPath(GET_ISSUE_BY_ID_ENDPOINT, id)));
         return gson.fromJson(response, JiraIssuesResponse.class);
     }
+
+
 
     public JiraIssuesResponse getIssueByIssueKey(String issueKey) throws IOException {
         var response = sendHttpGet(getUri(urlPath(GET_ISSUE_BY_ID_ENDPOINT, issueKey)));
@@ -85,6 +88,15 @@ public class JiraApi extends BaseApi {
         var response = sendHttpGet(uri(JIRA_SEARCH_ASSIGNABLE_USERS, params));
 
         Type listType = new TypeToken<List<AssignableUserResponse>>() {
+        }.getType();
+
+        return gson.fromJson(response, listType);
+    }
+
+    public List<JIRAVersionResponse> fetchJiraVersionsByProject(String project) throws ApiException {
+        var response = sendHttpGet(getUri(urlPath(GET_VERSIONS_BY_PROJECT_ENDPOINT, project)));
+
+        Type listType = new TypeToken<List<JIRAVersionResponse>>() {
         }.getType();
 
         return gson.fromJson(response, listType);

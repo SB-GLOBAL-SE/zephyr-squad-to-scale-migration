@@ -23,9 +23,9 @@ public class TestExecutionPostMigrator {
     private final JiraApi jiraApi;
     private final TestExecutionCsvExporter testExecutionCsvExporter;
 
-    private static final String[] csvHeader = {"ID", "SCALE_EXECUTION_ID", "CREATED_BY", "CREATED_ON", "MODIFIED_BY", "MODIFIED_ON"};
+    private static final String[] csvHeader = {"ID", "SCALE_EXECUTION_ID", "CREATED_BY", "CREATED_ON", "MODIFIED_BY", "MODIFIED_ON", "EXECUTED_ON"};
 
-    private static final String[] csvMapping = {"id", "mappedScaleId", "createdBy", "createdOn", "modifiedBy", "modifiedOn"};
+    private static final String[] csvMapping = {"id", "mappedScaleId", "createdBy", "createdOn", "modifiedBy", "modifiedOn", "executedOn"};
 
     private final Map<String, GetProjectResponse> projectMetadata = new HashMap<>();
 
@@ -68,7 +68,8 @@ public class TestExecutionPostMigrator {
                     key.createdBy().toString(),
                     key.createdOn(),
                     key.modifiedBy(),
-                    key.modifiedOn()));
+                    key.modifiedOn(),
+                    key.executedOn()));
         }
         return executionsMapped;
     }

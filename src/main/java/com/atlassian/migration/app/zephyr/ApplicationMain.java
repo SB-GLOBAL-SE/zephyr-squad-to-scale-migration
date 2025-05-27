@@ -72,6 +72,7 @@ public class ApplicationMain {
         var databaseType = prop.getProperty("database");
         var httpVersion = prop.getProperty("httpVersion");
         var updateDatabaseFieldsPostMigration = Boolean.parseBoolean(prop.getProperty("updateDatabaseFieldsPostMigration"));
+        var ignoreTestResultsStatusCase = Boolean.parseBoolean(prop.getProperty("ignoreTestResultsStatusCase"));
         var attachmentsBaseFolder = PropertySanitizer.sanitizeAttachmentsBaseFolder(prop.getProperty("attachmentsBaseFolder"));
 
         var username = args[0];
@@ -81,7 +82,7 @@ public class ApplicationMain {
 
         return new MigrationConfiguration(apiConfig, pageSteps, cycleNamePlaceHolder,
                 attachmentsMappedCsvFile, testCaseCSVFile, testExecutionCSVFile, jiraDateTimeFormat,
-                databaseType, updateDatabaseFieldsPostMigration, attachmentsBaseFolder);
+                databaseType, updateDatabaseFieldsPostMigration, ignoreTestResultsStatusCase, attachmentsBaseFolder);
     }
 
     private static SquadToScaleMigrator createSquadToScaleMigrator(MigrationConfiguration migrationConfig) throws IOException {

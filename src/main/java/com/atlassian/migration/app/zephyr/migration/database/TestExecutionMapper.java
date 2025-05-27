@@ -8,6 +8,8 @@ public class TestExecutionMapper {
     private String MODIFIED_BY;
     private String MODIFIED_ON;
 
+    private String EXECUTED_ON;
+
     public int getId() {
         return id;
     }
@@ -56,4 +58,11 @@ public class TestExecutionMapper {
         this.MODIFIED_ON = MODIFIED_ON;
     }
 
+    public String getEXECUTED_ON() {
+        return EXECUTED_ON;
+    }
+
+    public void setEXECUTED_ON(String EXECUTED_ON) {
+        this.EXECUTED_ON = EXECUTED_ON;
+    }
 }
