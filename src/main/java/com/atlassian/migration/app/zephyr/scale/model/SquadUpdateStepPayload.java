@@ -1,5 +1,8 @@
 package com.atlassian.migration.app.zephyr.scale.model;
 
 public record SquadUpdateStepPayload(
-        SquadGETStepItemPayload testScript
-) { }
+
+        Long id,
+        ScaleStepByStepScript testScript
+) {
+}

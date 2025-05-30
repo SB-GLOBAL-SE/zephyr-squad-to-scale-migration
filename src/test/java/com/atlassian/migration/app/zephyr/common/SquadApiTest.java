@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -110,8 +111,8 @@ public class SquadApiTest {
     class WhenFetchingTestSteps {
 
         private static final String FETCH_STEPS_RESPONSE_MOCK = "{stepBeanCollection:[" +
-                "{id:1,orderId:1,htmlStep:html_step,htmlData:html_data,htmlResult:html_result,attachmentsMap:[]}," +
-                "{id:2,orderId:2,htmlStep:html_step,htmlData:html_data,htmlResult:html_result,attachmentsMap:[]}" +
+                "{id:1,orderId:1,htmlStep:html_step,htmlData:html_data,htmlResult:html_result,attachmentsMap:[],customFields:{}}," +
+                "{id:2,orderId:2,htmlStep:html_step,htmlData:html_data,htmlResult:html_result,attachmentsMap:[],customFields:{}}" +
                 "]}";
 
         @Test
@@ -119,9 +120,9 @@ public class SquadApiTest {
 
             var testStepsExpected = List.of(
                     new SquadTestStepResponse("1", "1",
-                            "html_step", "html_data", "html_result", Collections.emptyList()),
+                            "html_step", "html_data", "html_result", Collections.emptyList(), new HashMap<>()),
                     new SquadTestStepResponse("2", "2",
-                            "html_step", "html_data", "html_result", Collections.emptyList())
+                            "html_step", "html_data", "html_result", Collections.emptyList(), new HashMap<>())
 
             );
 

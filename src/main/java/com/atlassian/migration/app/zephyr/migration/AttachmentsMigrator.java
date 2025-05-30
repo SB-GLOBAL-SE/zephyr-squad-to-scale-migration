@@ -60,8 +60,10 @@ public class AttachmentsMigrator {
         this.attachmentsCsvExporter = attachmentsCsvExporter;
         this.dataSource = dataSource;
         this.attachmentsCopier = attachmentsCopier;
+    }
 
-
+    public DriverManagerDataSource getDataSource() {
+        return dataSource;
     }
 
     public void export(SquadToScaleEntitiesMap entitiesMap, String projectKey) throws IOException {

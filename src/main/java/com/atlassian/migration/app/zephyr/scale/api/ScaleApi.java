@@ -21,12 +21,14 @@ public class ScaleApi extends BaseApi {
     public static final String CREATE_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield";
     public static final String ADD_OPTION_TO_CUSTOM_FIELD_ENDPOINT = "/rest/atm/1.0/customfield/%s/option";
     public static final String CREATE_SCALE_TEST_CASE_ENDPOINT = "/rest/atm/1.0/testcase";
-    public static final String SCALE_TEST_STEP_ENDPOINT = "/rest/atm/1.0/testcase/%s";
+    public static final String SCALE_TEST_STEP_ENDPOINT = "/rest/tests/1.0/testcase/%s";
+    public static final String FETCH_SCALE_TEST_CASE_BYKEY_ENDPOINT = "/rest/atm/1.0/testcase/%s";
     public static final String CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT = "/rest/atm/1.0/testrun";
     public static final String CREATE_SCALE_TEST_RESULTS_ENDPOINT = "/rest/atm/1.0/testrun/%s/testresults";
     public static final String FETCH_SCALE_TEST_RESULTS_ENDPOINT = "/rest/tests/1.0/testresult/%s?fields=id,key,testScriptResults";
     public static final String FETCH_SCALE_RESULTS_STATUSES = "/rest/tests/1.0/testresultstatus?projectId=%s";
     public static final String FETCH_SCALE_TESTCASE_STATUSES = "/rest/tests/1.0/testcasestatus?projectId=%s";
+    public static final String FETCH_SCALE_CUSTOM_FIELDS = "/rest/tests/1.0/project/%s/customfields/%s?projectId=%s";
     public static final String CREATE_SCALE_TESTCASE_STATUSES = "/rest/tests/1.0/testcasestatus";
     public static final String FETCH_SCALE_TESTCASE_PRIORITY = "/rest/tests/1.0/testcasepriority?projectId=%s";
     public static final String CREATE_SCALE_TESTCASE_PRIORITY = "/rest/tests/1.0/testcasepriority";
@@ -65,6 +67,14 @@ public class ScaleApi extends BaseApi {
         }
     }
 
+    public void updateTestStepByKey(String key, SquadUpdateStepPayloadKey step) throws ZephyrApiException {
+        try {
+            sendHttpPut(String.format(FETCH_SCALE_TEST_CASE_BYKEY_ENDPOINT, key), step);
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP, key), e);
+        }
+    }
+
     public void updateTestStepdefects(List<ScaleExecutionStepDefectsPayload> step) throws ZephyrApiException {
         try {
             sendHttpPost(String.format(CREATE_SCALE_TEST_SCRIPT_RESULT_DEFECT_ENDPOINT), step);
@@ -76,7 +86,7 @@ public class ScaleApi extends BaseApi {
     public ScaleGETStepsPayload fetchTestStepsFromTestCaseKey(String key) throws ZephyrApiException {
 
         try {
-            var response = sendHttpGet(getUri(urlPath(SCALE_TEST_STEP_ENDPOINT, key)));
+            var response = sendHttpGet(getUri(urlPath(FETCH_SCALE_TEST_CASE_BYKEY_ENDPOINT, key)));
 
             return gson.fromJson(response, ScaleGETStepsPayload.class);
         } catch (ApiException e) {
@@ -135,7 +145,17 @@ public class ScaleApi extends BaseApi {
         } catch (ApiException e) {
             ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_STATUS, projectId), e);
         }
+    }
 
+    public List<ScaleCustomFieldResponse> fetchScaleCustomFields(String entityType, String projectId) throws ZephyrApiException {
+        try {
+            var response = sendHttpGet(getUri(urlPath(FETCH_SCALE_CUSTOM_FIELDS, projectId, entityType, projectId)));
+            List<ScaleCustomFieldResponse> scaleCustomFieldsResponse = gson.fromJson(response, new TypeToken<List<ScaleCustomFieldResponse>>(){}.getType());
+            return scaleCustomFieldsResponse;
+        } catch (ApiException e) {
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_CUSTOM_FIELDS, projectId), e);
+        }
+        return new LinkedList<ScaleCustomFieldResponse>();
     }
 
     public String CreateScaleTestcaseStatus(String projectId, String name) throws ZephyrApiException{
@@ -275,7 +295,7 @@ public class ScaleApi extends BaseApi {
         public static final String ERROR_CREATE_TEST_STEP_DEFECT = "Error while creating step results defects.";
 
         public static final String ERROR_FETCHING_TEST_STEP = "Error while fetching Test Steps at " +
-                SCALE_TEST_STEP_ENDPOINT;
+                FETCH_SCALE_TEST_CASE_BYKEY_ENDPOINT;
 
         public static final String ERROR_FETCHING_TESTRESULTS_STATUS = "Error while fetching Test results status at " +
                 FETCH_SCALE_RESULTS_STATUSES;
@@ -288,6 +308,9 @@ public class ScaleApi extends BaseApi {
 
         public static final String ERROR_FETCHING_TESTCASE_STATUS = "Error while fetching Test Case status at " +
                 FETCH_SCALE_TESTCASE_STATUSES;
+
+        public static final String ERROR_FETCHING_CUSTOM_FIELDS = "Error while fetching custom fields at " +
+                FETCH_SCALE_CUSTOM_FIELDS;
 
         public static final String ERROR_CREATING_TESTCASE_STATUS = "Error while creating Test Case status at " +
                 CREATE_SCALE_TESTCASE_STATUSES;

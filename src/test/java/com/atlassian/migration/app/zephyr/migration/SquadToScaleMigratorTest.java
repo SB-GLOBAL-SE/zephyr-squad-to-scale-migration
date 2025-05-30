@@ -6,10 +6,8 @@ import com.atlassian.migration.app.zephyr.jira.model.*;
 import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionPostMigrator;
 import com.atlassian.migration.app.zephyr.migration.testcase.TestCasePostMigrator;
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
-import com.atlassian.migration.app.zephyr.scale.model.GetAllProjectsResponse;
-import com.atlassian.migration.app.zephyr.scale.model.GetProjectResponse;
-import com.atlassian.migration.app.zephyr.scale.model.Option;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleTestResultCreatedPayload;
+import com.atlassian.migration.app.zephyr.scale.database.ScaleTestCaseRepository;
+import com.atlassian.migration.app.zephyr.scale.model.*;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
 import com.atlassian.migration.app.zephyr.squad.model.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,11 +15,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Mockito.*;
@@ -36,7 +34,11 @@ class SquadToScaleMigratorTest {
 
     @Mock
     JiraApi jiraApiMock;
+    @Mock
+    private DriverManagerDataSource driverManagerDataSourceMock;
 
+    @Mock
+    private ScaleTestCaseRepository scaleTestCaseRepositoryMock;
     @Mock
     AttachmentsMigrator attachmentsMigratorMock;
 
@@ -55,6 +57,10 @@ class SquadToScaleMigratorTest {
     private final List<JiraIssuesResponse> issuesMock = new ArrayList<>();
 
     private FetchSquadExecutionParsedResponse emptyExecutionsMock;
+
+    private TestCaseEntity emptytestCaseEntityMock;
+    @Mock
+    private JdbcTemplate jdbcTemplateMock;
 
     @BeforeEach
     void setup() throws IOException {
@@ -97,6 +103,8 @@ class SquadToScaleMigratorTest {
 
         ));
 
+        scaleTestCaseRepositoryMock = new ScaleTestCaseRepository(driverManagerDataSourceMock);
+
         emptyExecutionsMock = new FetchSquadExecutionParsedResponse(Collections.emptyMap(),
                 "10100",
                 0,
@@ -105,6 +113,7 @@ class SquadToScaleMigratorTest {
                 false,
                 Collections.emptyList());
 
+        emptytestCaseEntityMock = new TestCaseEntity(1l, "PROJECT-1");
     }
 
     @Nested
@@ -186,6 +195,12 @@ class SquadToScaleMigratorTest {
 
             when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
 
+            when(attachmentsMigratorMock.getDataSource()).thenReturn(driverManagerDataSourceMock);
+//
+//            when(driverManagerDataSourceMock.getUrl()).thenReturn("jdbc:postgresql://localhost:5432/jira");
+
+//            when(scaleTestCaseRepositoryMock.getByKey(any())).thenReturn(Optional.of(emptytestCaseEntityMock));
+
             migratorSpy.runMigration("PROJECT");
 
             verify(scaleApiMock, times(issuesMock.size())).createTestCases(any());
@@ -196,9 +211,9 @@ class SquadToScaleMigratorTest {
         void shouldCallUpdateTestStepOncePerIssue() throws IOException, ExecutionException, InterruptedException {
 
             var stepBeanCollectionMock = List.of(
-                    new SquadTestStepResponse("1", "order", "step", "data", "result", Collections.emptyList()),
-                    new SquadTestStepResponse("2", "order", "step", "data", "result", Collections.emptyList()),
-                    new SquadTestStepResponse("3", "order", "step", "data", "result", Collections.emptyList())
+                    new SquadTestStepResponse("1", "order", "step", "data", "result", Collections.emptyList(), new HashMap<>()),
+                    new SquadTestStepResponse("2", "order", "step", "data", "result", Collections.emptyList(), new HashMap<>()),
+                    new SquadTestStepResponse("3", "order", "step", "data", "result", Collections.emptyList(), new HashMap<>())
             );
 
             var fetchSquadTestStepResponseMock = new FetchSquadTestStepResponse(stepBeanCollectionMock);
@@ -209,9 +224,15 @@ class SquadToScaleMigratorTest {
             when(squadApiMock.fetchLatestExecutionByIssueId(any())).thenReturn(emptyExecutionsMock);
 
             when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
+//            when(attachmentsMigratorMock.getDataSource()).thenReturn(driverManagerDataSourceMock);
+//
+//            when(driverManagerDataSourceMock.getUrl()).thenReturn("jdbc:postgresql://localhost:5432/jira");
+
+//            when(scaleTestCaseRepositoryMock.getByKey(anyString())).thenReturn(null);
+
             migratorSpy.runMigration("PROJECT");
 
-            verify(scaleApiMock, times(issuesMock.size())).updateTestStep(any(), any());
+            verify(scaleApiMock, times(issuesMock.size())).updateTestStepByKey(anyString(), any(SquadUpdateStepPayloadKey.class));
 
         }
 

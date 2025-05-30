@@ -13,6 +13,7 @@ import com.atlassian.migration.app.zephyr.migration.service.ScaleTestCasePayload
 import com.atlassian.migration.app.zephyr.migration.service.ScaleTestExecutionPayloadFacade;
 import com.atlassian.migration.app.zephyr.migration.testcase.TestCasePostMigrator;
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
+import com.atlassian.migration.app.zephyr.scale.database.ScaleTestCaseRepository;
 import com.atlassian.migration.app.zephyr.scale.model.*;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
 import com.atlassian.migration.app.zephyr.squad.model.*;
@@ -21,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class SquadToScaleMigrator {
@@ -44,7 +46,8 @@ public class SquadToScaleMigrator {
     private final TestExecutionPostMigrator testExecutionPostMigrator;
     private final List<Resettable> resettables = new ArrayList<>();
 
-    private List<String> projectCustomFieldNames = new ArrayList<>();
+    private List<String> projectExecutionCustomFieldNames = new ArrayList<>();
+    private Map<String, ScaleCustomFieldResponse> projectTestStepCustomFields = new HashMap<>();
 
     public SquadToScaleMigrator(JiraApi jiraApi, SquadApi squadApi, ScaleApi scaleApi, AttachmentsMigrator attachmentsMigrator,
                                 TestCasePostMigrator testCasePostMigrator,
@@ -92,7 +95,9 @@ public class SquadToScaleMigrator {
             var total = jiraApi.fetchTotalIssuesByProjectName(projectKey);
 
             //resetting the project custom fields.
-            projectCustomFieldNames = new ArrayList<String>();
+            projectExecutionCustomFieldNames = new ArrayList<String>();
+            projectTestStepCustomFields = new HashMap<>();
+
             var projectResponse = jiraApi.getProjectByKey(projectKey);
             if (total == 0) {
                 logger.info("Project doesn't have Squad Objects, skipping it");
@@ -316,12 +321,54 @@ public class SquadToScaleMigrator {
                                 scaleApi.addOptionToCustomField(customFieldId, option);
                             }
                         }
-                        if(!projectCustomFieldNames.contains(customFieldName)) {
-                            projectCustomFieldNames.add(customFieldName);
+                        if(!projectExecutionCustomFieldNames.contains(customFieldName)) {
+                            projectExecutionCustomFieldNames.add(customFieldName);
                         }
                         logger.info("Migration Custom Field " + customFieldName + " created successfully.");
                     }
                 }
+            }
+
+            // create Migration CustomFields for TestSteo.
+            FetchSquadCustomFieldResponse fetchSquadStepCustomFieldResponse = squadApi.fetchSquadCustomFieldResponse("TESTSTEP", projectId);
+            List<String> tobeMigratedStepFields = new ArrayList<>();
+            if(fetchSquadStepCustomFieldResponse != null && fetchSquadStepCustomFieldResponse.data().size() > 0){
+                for(SquadCustomFieldResponse squadCustomFieldResponse:fetchSquadStepCustomFieldResponse.data()){
+                    if(squadCustomFieldResponse.isActive()){
+                        List<ScaleTestCaseCustomFieldOption> options = null;
+                        if(SQUAD_CUSTOM_FIELDS_HAS_OPTIONS.contains(squadCustomFieldResponse.fieldType())){
+                            options = new LinkedList<>();
+                            if(squadCustomFieldResponse.customFieldOptionValues() != null &&
+                                    squadCustomFieldResponse.customFieldOptionValues().size() > 0){
+                                int index = 1;
+                                for(Map.Entry<String, String> customFieldEntry:squadCustomFieldResponse.customFieldOptionValues().entrySet()){
+                                    options.add(new ScaleTestCaseCustomFieldOption(customFieldEntry.getValue(), index, false));
+                                    index++;
+                                }
+                            }
+                        }
+                        String customFieldName = squadCustomFieldResponse.name();
+                        var customFieldId = scaleApi.createCustomField(
+                                new ScaleCustomFieldPayload(
+                                        customFieldName,
+                                        ScaleMigrationTestStepCustomFieldPayload.ENTITY_TYPE,
+                                        projectKey,
+                                        ScaleCustomFieldPayload.SQUAD_SCALE_CUSTOM_FIELD_TYPE.get(squadCustomFieldResponse.fieldType())
+                                )
+                        );
+                        if(customFieldId != null && !customFieldId.isEmpty() && options != null && options.size() > 0) {
+                            for (var option : options) {
+                                scaleApi.addOptionToCustomField(customFieldId, option);
+                            }
+                        }
+                        tobeMigratedStepFields.add(customFieldName);
+                        logger.info("Migration Custom Field " + customFieldName + " created successfully.");
+                    }
+                }
+            }
+            List<ScaleCustomFieldResponse> scaleTestStepCustomFields = scaleApi.fetchScaleCustomFields("teststep", projectId);
+            if(scaleTestStepCustomFields != null && scaleTestStepCustomFields.size() >0) {
+                projectTestStepCustomFields.putAll(scaleTestStepCustomFields.stream().filter(e -> tobeMigratedStepFields.contains(e.name())).collect(Collectors.toMap(ScaleCustomFieldResponse::name, Function.identity())));
             }
         } catch (IOException exception) {
             logger.error("Failed to create migration custom fields " + exception.getMessage(),
@@ -413,23 +460,55 @@ public class SquadToScaleMigrator {
             logger.info("Fetching latest Squad test step from " + testCaseItem.getKey().testCaseId() + "...");
 
             var testStepMap = new SquadToScaleTestStepMap();
-
             var squadTestSteps = squadApi.fetchLatestTestStepByTestCaseId(testCaseItem.getKey().testCaseId());
 
             if (squadTestSteps.stepBeanCollection().isEmpty()) {
                 return testStepMap;
             }
+            if(attachmentsMigrator.getDataSource() != null) {
+                var scaleRepo = new ScaleTestCaseRepository(attachmentsMigrator.getDataSource());
+                var testCaseEntity = scaleRepo.getByKey(testCaseItem.getValue());
+                if (testCaseEntity != null || testCaseEntity.isPresent()) {
+                    var steps = new SquadUpdateStepPayload(testCaseEntity.get().id(), new ScaleStepByStepScript(new SquadGETStepItemPayload()));
 
-            var steps = new SquadUpdateStepPayload(new SquadGETStepItemPayload());
+                    List<ScaleGETStepItemPayload> scaleSteps = new LinkedList<>();
+                    int index = 0;
+                    for(var squadStep: squadTestSteps.stepBeanCollection()){
+                        scaleSteps.add(ScaleGETStepItemPayload.createScaleGETStepItemPayloadForCreation(
+                                squadStep.htmlStep(),
+                                squadStep.htmlData(),
+                                squadStep.htmlResult(),
+                                squadStep.customFields(),
+                                testCaseEntity,
+                                projectTestStepCustomFields,
+                                index++
+                        ));
+                    }
+                    steps.testScript().stepByStepScript().steps = scaleSteps;
+                    logger.info("Updating steps for scale test case...");
+                    scaleApi.updateTestStep(String.valueOf(testCaseEntity.get().id()), steps);
+
+                    //only mapping if updateTestStep was successful
+                    testStepMap.put(testCaseItem.getValue(),
+                            squadTestSteps.stepBeanCollection().stream().collect(Collectors
+                                    .toMap(testStepResponse -> new SquadToScaleTestStepMap.TestStepMapKey(
+                                            testStepResponse.id(), testStepResponse.orderId()
+                                    ), SquadTestStepResponse::attachmentsMap)));
+                    return testStepMap;
+
+                }
+            }
+            var steps = new SquadUpdateStepPayloadKey(new SquadGETStepItemPayloadKey());
 
             steps.testScript().steps = squadTestSteps.stepBeanCollection().stream()
                     .map(e -> ScaleGETStepItemPayload.createScaleGETStepItemPayloadForCreation(
                             e.htmlStep(),
                             e.htmlData(),
-                            e.htmlResult())).toList();
-
-            logger.info("Updating steps for scale test case...");
-            scaleApi.updateTestStep(testCaseItem.getValue(), steps);
+                            e.htmlResult(),
+                            null,
+                            null,
+                            null, null)).toList();
+            scaleApi.updateTestStepByKey(testCaseItem.getValue(), steps);
 
             //only mapping if updateTestStep was successful
             testStepMap.put(testCaseItem.getValue(),
@@ -438,6 +517,7 @@ public class SquadToScaleMigrator {
                                     testStepResponse.id(), testStepResponse.orderId()
                             ), SquadTestStepResponse::attachmentsMap)));
             return testStepMap;
+
         } catch (IOException exception) {
             logger.error("Failed to update steps for Scale test case with test case id: " + testCaseItem.getKey().testCaseId() + " " + exception.getMessage(), exception);
             throw new RuntimeException(exception);
@@ -473,7 +553,7 @@ public class SquadToScaleMigrator {
                 var testExecutionCfValueResponse = squadApi.fetchSquadExecutionCustomFieldValueResponse(execution.id());
                 var testExecutionPayload = scaleTestExecutionPayloadFacade
                         .buildPayload(execution, item.getValue(), projectKey, testExectuionStepResponse,
-                                testExecutionCfValueResponse, projectCustomFieldNames);
+                                testExecutionCfValueResponse, projectExecutionCustomFieldNames);
 
                 var scaleTestExecutionCreatedPayload = scaleApi.createTestExecution(scaleCycleKey,
                         testExecutionPayload);

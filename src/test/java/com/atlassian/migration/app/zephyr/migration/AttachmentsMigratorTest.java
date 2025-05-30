@@ -116,7 +116,7 @@ class AttachmentsMigratorTest {
         var stepItemPayloadMock = new SquadGETStepItemPayload();
 
         stepItemPayloadMock.steps = List.of(
-                new ScaleGETStepItemPayload("desc", "data", "res", "1", "1")
+                new ScaleGETStepItemPayload("desc", "data", "res", "1", 1, new ArrayList<>())
         );
 
         var scaleGETStepsPayloadMock = new ScaleGETStepsPayload("KEY-1", "PROJECT", stepItemPayloadMock);

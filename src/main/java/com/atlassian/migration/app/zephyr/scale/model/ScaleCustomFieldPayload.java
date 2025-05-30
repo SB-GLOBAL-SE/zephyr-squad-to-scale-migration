@@ -19,7 +19,6 @@ public record ScaleCustomFieldPayload(
     public static final String DECIMAL = "DECIMAL";
     public static final String MULTI_CHOICE_SELECT_LIST = "MULTI_CHOICE_SELECT_LIST";
 
-
     public static final Map<String, String> SQUAD_SCALE_CUSTOM_FIELD_TYPE = Map.of(
             "LARGE_TEXT", MULTI_LINE_TEXT,
             "TEXT", TYPE_SINGLE_LINE_TEXT,

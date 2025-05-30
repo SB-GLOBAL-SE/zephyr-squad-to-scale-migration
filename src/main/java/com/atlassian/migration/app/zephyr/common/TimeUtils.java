@@ -61,7 +61,7 @@ public class TimeUtils {
 
         // Convert to Instant and format
         Instant instant = Instant.ofEpochMilli(timestamp);
-        ZonedDateTime zdt = instant.atZone(ZoneId.systemDefault()); // or use ZoneId.of("UTC")
+        ZonedDateTime zdt = instant.atZone(ZoneId.of(SCALE_TIMEZONE)); // or use ZoneId.of("UTC")
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         String formattedDate = zdt.format(formatter);
