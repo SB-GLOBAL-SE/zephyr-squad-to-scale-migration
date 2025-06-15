@@ -231,7 +231,7 @@ class JiraApiTest {
     @Nested
     class WhenFetchingProjects {
 
-        private final GetProjectResponse expectedProject = new GetProjectResponse("PROJECT", "10100", null);
+        private final GetProjectResponse expectedProject = new GetProjectResponse("PROJECT", "10100", null, null);
 
         private static final String RESPONSE_WITH_SINGLE_PROJECT_MOCK = "{key:PROJECT,id:10100}";
 

@@ -82,7 +82,7 @@ class SquadToScaleMigratorTest {
                 testExecutionPostMigrator,
                 migConfigSpy));
 
-        when(jiraApiMock.getProjectByKey(any())).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList()));
+        when(jiraApiMock.getProjectByKey(any())).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList(), Collections.emptyList()));
         doNothing().when(attachmentsMigratorMock).export(any(), any());
 
         fieldsMock.summary = "summary";
@@ -130,7 +130,7 @@ class SquadToScaleMigratorTest {
             var allProjects = new GetAllProjectsResponse(projectsMock);
 
             doReturn(allProjects).when(squadApiMock).getAllProjects();
-            doReturn(new GetProjectResponse("PROJECT-1", "1", Collections.emptyList())).when(jiraApiMock).getProjectById(any());
+            doReturn(new GetProjectResponse("PROJECT-1", "1", Collections.emptyList(), Collections.emptyList())).when(jiraApiMock).getProjectById(any());
 
             doNothing().when(migratorSpy).runMigration(any());
             migratorSpy.getProjectListAndRunMigration();
@@ -154,7 +154,7 @@ class SquadToScaleMigratorTest {
 
             var totalIssuesMock = 10;
             var interactionsExpected = totalIssuesMock / migConfigSpy.pageSteps();
-            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null);
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null, null);
 
             when(jiraApiMock.fetchTotalIssuesByProjectName(any())).thenReturn(totalIssuesMock);
 
@@ -187,7 +187,7 @@ class SquadToScaleMigratorTest {
 
         @Test
         void shouldCreateOneTestCasePerIssue() throws IOException, ExecutionException, InterruptedException {
-            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null);
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null, null);
 
             when(squadApiMock.fetchLatestTestStepByTestCaseId(any())).thenReturn(new FetchSquadTestStepResponse(Collections.emptyList()));
 
@@ -217,7 +217,7 @@ class SquadToScaleMigratorTest {
             );
 
             var fetchSquadTestStepResponseMock = new FetchSquadTestStepResponse(stepBeanCollectionMock);
-            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null);
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null, null);
 
             when(squadApiMock.fetchLatestTestStepByTestCaseId(any())).thenReturn(fetchSquadTestStepResponseMock);
 
@@ -268,7 +268,7 @@ class SquadToScaleMigratorTest {
                     false,
                     false,
                     executionsMock);
-            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null);
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null, null);
 
             when(squadApiMock.fetchLatestExecutionByIssueId(any())).thenReturn(fetchSquadExecutionParsedResponseMock);
             when(scaleApiMock.createTestExecution(any(), any())).thenReturn(new ScaleTestResultCreatedPayload("1"));

@@ -31,4 +31,18 @@ public record ScaleCustomFieldPayload(
             "RADIO_BUTTON",SINGLE_CHOICE_SELECT_LIST
     );
 
+    public static final Map<String, String> JIRA_SCALE_CUSTOM_FIELD_TYPE = Map.of(
+            "com.atlassian.jira.plugin.system.customfieldtypes:textarea", MULTI_LINE_TEXT,
+            "com.atlassian.jira.plugin.system.customfieldtypes:textfield", TYPE_SINGLE_LINE_TEXT,
+            "com.atlassian.jira.plugin.system.customfieldtypes:select",SINGLE_CHOICE_SELECT_LIST,
+            "com.atlassian.jira.plugin.system.customfieldtypes:multicheckboxes",MULTI_CHOICE_SELECT_LIST,
+            "com.atlassian.jira.plugin.system.customfieldtypes:datepicker",DATE,
+            "com.atlassian.jira.plugin.system.customfieldtypes:datetime",DATE,
+            "com.atlassian.jira.plugin.system.customfieldtypes:multiselect",MULTI_CHOICE_SELECT_LIST,
+            "com.atlassian.jira.plugin.system.customfieldtypes:float",DECIMAL,
+            "com.atlassian.jira.plugin.system.customfieldtypes:radiobuttons",SINGLE_CHOICE_SELECT_LIST,
+            "com.atlassian.jira.plugin.system.customfieldtypes:userpicker",USER_LIST
+    );
+
+
 }

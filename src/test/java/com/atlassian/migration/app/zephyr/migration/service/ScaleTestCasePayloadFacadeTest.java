@@ -3,7 +3,6 @@ package com.atlassian.migration.app.zephyr.migration.service;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.*;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCreationPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationTestCaseCustomFieldPayload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -96,7 +96,7 @@ public class ScaleTestCasePayloadFacadeTest {
         );
 
         var receivedPayload = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
 
         assertEquals(expectedPayload, receivedPayload);
     }
@@ -126,7 +126,7 @@ public class ScaleTestCasePayloadFacadeTest {
         );
 
         var receivedPayload = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
 
         assertEquals(expectedPayload, receivedPayload);
     }
@@ -156,12 +156,12 @@ public class ScaleTestCasePayloadFacadeTest {
         );
 
         var receivedPayloadEmpty = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
 
         jiraIssueFieldResponseMock.priority = new JiraIssuePriority(1, null);
 
         var receivedPayloadNull = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
 
         assertEquals(expectedPayload, receivedPayloadEmpty);
         assertEquals(expectedPayload, receivedPayloadNull);
@@ -189,7 +189,7 @@ public class ScaleTestCasePayloadFacadeTest {
         );
         jiraIssueFieldResponseMock.description = "";
         var receivedPayload = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
 
 
         verify(jiraApiMock, never()).convertJiraTextFormattingToHtml(any());

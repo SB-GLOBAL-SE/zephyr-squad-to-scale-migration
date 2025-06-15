@@ -1,23 +1,19 @@
 package com.atlassian.migration.app.zephyr.migration.service;
 
+import com.atlassian.migration.app.zephyr.common.TimeUtils;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssueComponent;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuePriority;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssueStatusResponse;
 import com.atlassian.migration.app.zephyr.jira.model.JiraIssuesResponse;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleCustomFieldPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleProjectTestCaseCustomFieldPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCreationPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCustomField;
+import com.atlassian.migration.app.zephyr.scale.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Stream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -34,7 +30,7 @@ public class ScaleTestCasePayloadFacade {
         this.jiraApi = jiraApi;
     }
 
-    public ScaleTestCaseCreationPayload createTestCasePayload(JiraIssuesResponse issue, String projectKey) {
+    public ScaleTestCaseCreationPayload createTestCasePayload(JiraIssuesResponse issue, String projectKey, Map<String, ScaleCustomFieldResponse> projectTestcaseCustomFieldNames) {
         var sanitizedPriority = sanitizePriority(issue.fields().priority);
 
         var sanitizedStatus = sanitizeStatus(issue.fields().status);
@@ -68,7 +64,7 @@ public class ScaleTestCasePayloadFacade {
         scaleCustomFields.put("components", getComponentsNames(issue));
         scaleCustomFields.put("squadStatus", issue.fields().status.name());
         scaleCustomFields.put("squadPriority", sanitizedPriority);
-        scaleCustomFields.putAll(getCustomFieldsToMigrate(issue));
+        scaleCustomFields.putAll(getCustomFieldsToMigrate(issue, projectTestcaseCustomFieldNames));
 
         return new ScaleTestCaseCreationPayload(
                 projectKey,
@@ -84,16 +80,15 @@ public class ScaleTestCasePayloadFacade {
         );
     }
 
-    private Map<String, Object> getCustomFieldsToMigrate(JiraIssuesResponse issue) {
+    private Map<String, Object> getCustomFieldsToMigrate(JiraIssuesResponse issue, Map<String, ScaleCustomFieldResponse> projectTestcaseCustomFieldNames) {
 
         Map<String, Object> mappedCustomFieldAndValues = new HashMap<>();
-        var customFieldsToMigrate = ScaleProjectTestCaseCustomFieldPayload.CUSTOM_FIELD_ID_TO_NAMES.keySet();
+        var customFieldsToMigrate = projectTestcaseCustomFieldNames.keySet();
 
         issue.fields().customFields.entrySet().stream()
                 .filter( customField ->customFieldsToMigrate.contains(customField.getKey()))
                 .forEach(customFieldMetadata -> {
-                    var customFieldProps = ScaleProjectTestCaseCustomFieldPayload
-                            .CUSTOM_FIELD_ID_TO_NAMES
+                    var customFieldProps = projectTestcaseCustomFieldNames
                             .get(customFieldMetadata.getKey());
 
                     mappedCustomFieldAndValues.put(customFieldProps.name(),
@@ -103,23 +98,95 @@ public class ScaleTestCasePayloadFacade {
         return mappedCustomFieldAndValues;
     }
 
-    private String getCustomFieldValue(Map.Entry<String, Object> customFieldMetadata, ScaleTestCaseCustomField customFieldProps){
-
+    private Object getCustomFieldValue(Map.Entry<String, Object> customFieldMetadata, ScaleCustomFieldResponse customFieldProps){
         try {
-
             switch (customFieldProps.type()) {
                 case ScaleCustomFieldPayload.SINGLE_CHOICE_SELECT_LIST -> {
                     if (customFieldMetadata.getValue() == null) {
                         return null;
                     }
-                    var customFieldData = (Map<String, Object>) customFieldMetadata.getValue();
-                    return (String) customFieldData.get("value");
+                    if(customFieldMetadata.getValue() instanceof List<?>){
+                        try {
+                            var allValues = (List<Map<String, Object>>) customFieldMetadata.getValue();
+                            if (allValues.size() > 0) {
+                                var first = allValues.get(0);
+                                return (String) first.get("value");
+                            }
+                        }catch (Exception e){
+                            var allValues = (List<String>) customFieldMetadata.getValue();
+                            if (allValues.size() > 0) {
+                                var first = allValues.get(0);
+                                return first;
+                            }
+                        }
+                    }else {
+                        var customFieldData = (Map<String, Object>) customFieldMetadata.getValue();
+                        return (String) customFieldData.get("value");
+                    }
                 }
-                case ScaleCustomFieldPayload.MULTI_LINE_TEXT -> {
+                case ScaleCustomFieldPayload.MULTI_CHOICE_SELECT_LIST -> {
+                    if (customFieldMetadata.getValue() == null) {
+                        return null;
+                    }
+                    if(customFieldMetadata.getValue() instanceof List<?>){
+                        try {
+                            var allValues = (List<Map<String, Object>>) customFieldMetadata.getValue();
+                            Set<String> list = new HashSet<>();
+                            for(var item:allValues){
+                                list.add((String) item.get("value"));
+                            }
+                            if (list.size() > 0) {
+                                return list
+                                        .stream()
+                                        .collect(Collectors.joining(","));
+                            }
+                        }catch (Exception e){
+                            var allValues = (List<String>) customFieldMetadata.getValue();
+                            if (allValues.size() > 0) {
+                                return allValues.stream().collect(Collectors.joining(","));
+                            }
+                        }
+                    }else {
+                        var customFieldData = (Map<String, Object>) customFieldMetadata.getValue();
+                        return (String) customFieldData.get("value");
+                    }
+                }
+                case ScaleCustomFieldPayload.USER_LIST -> {
+                    if (customFieldMetadata.getKey() == null) {
+                        return null;
+                    }
+                    var customFieldData = (Map<String, Object>) customFieldMetadata.getValue();
+                    if(customFieldData == null){
+                        return null;
+                    }
+                    return (String) customFieldData.get("key");
+                }
+                case ScaleCustomFieldPayload.DATE -> {
+                    if (customFieldMetadata.getValue() == null) {
+                        return null;
+                    }
+                    Object metadataValue = customFieldMetadata.getValue();
+                    if(metadataValue instanceof String){
+                        return TimeUtils.getUTCTimestampforJiraDate((String)metadataValue);
+                    }
+                }
+                case ScaleCustomFieldPayload.NUMBER, ScaleCustomFieldPayload.DECIMAL -> {
+                    if (customFieldMetadata.getValue() == null) {
+                        return null;
+                    }
+                    Object metadataValue = customFieldMetadata.getValue();
+                        return Double.parseDouble(metadataValue.toString());
+
+                }
+                case ScaleCustomFieldPayload.MULTI_LINE_TEXT, ScaleCustomFieldPayload.TYPE_SINGLE_LINE_TEXT -> {
                     if (customFieldMetadata.getValue() == null) {
                         return "";
                     }
-                    return (String) customFieldMetadata.getValue();
+                    Object metadataValue = customFieldMetadata.getValue();
+                    if(metadataValue instanceof Collection<?>){
+                        return String.join(", ", (Collection<String>)metadataValue);
+                    }
+                    return (String) metadataValue;
                 }
                 default -> {
                     logger.warn("Custom field type not supported: " + customFieldProps.type());

@@ -111,7 +111,7 @@ class AttachmentsMigratorTest {
                 new SquadToScaleTestExecutionMap(),
                 new SquadToScaleExecutionStepMap());
 
-        when(jiraApiMock.getProjectByKeyWithHistoricalKeys(projectKey)).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList()));
+        when(jiraApiMock.getProjectByKeyWithHistoricalKeys(projectKey)).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList(), Collections.emptyList()));
 
         var stepItemPayloadMock = new SquadGETStepItemPayload();
 

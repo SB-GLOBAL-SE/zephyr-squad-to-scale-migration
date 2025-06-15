@@ -23,6 +23,7 @@ public class JiraApi extends BaseApi {
     public static final String GET_ISSUE_BY_ID_ENDPOINT = "/rest/api/2/issue/%s";
     public static final String RENDER_JIRA_TEXT_FORMATTING = "/rest/api/1.0/render";
     public static final String FETCH_PROJECT_CFS = "/rest/api/2/customFields";
+    public static final String FETCH_ISSUE_FIELDS_BY_ISSUE_TYPE = "/rest/api/latest/issue/createmeta/%s/issuetypes/%s?maxResults=200";
 
     public JiraApi(ApiConfiguration config) {
         super(config);
@@ -53,6 +54,11 @@ public class JiraApi extends BaseApi {
     public JiraIssuesResponse getIssueByIssueKey(String issueKey) throws IOException {
         var response = sendHttpGet(getUri(urlPath(GET_ISSUE_BY_ID_ENDPOINT, issueKey)));
         return gson.fromJson(response, JiraIssuesResponse.class);
+    }
+
+    public FetchJiraIssueTypesResponse getIssueFieldsByIssuetype(String projectId, String issueTypeId) throws IOException {
+        var response = sendHttpGet(getUri(urlPath(FETCH_ISSUE_FIELDS_BY_ISSUE_TYPE, projectId, issueTypeId)));
+        return gson.fromJson(response, FetchJiraIssueTypesResponse.class);
     }
 
     public List<Attachment> getIssueAttachmentsByIssueId(String id) throws IOException {
