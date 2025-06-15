@@ -63,12 +63,14 @@ public class TestCasePostMigrator {
 
         for(var testCase:testCasesMap.entrySet()){
             SquadToScaleTestCaseMap.TestCaseMapKey key = testCase.getKey();
-            executionsMapped.add(TestCaseAssociatedData.createExecutionAssociatedData(key.testCaseId(),
-                    testCase.getValue(),
-                    key.createdBy().toString(),
-                    key.createdOn(),
-                    key.modifiedBy(),
-                    key.modifiedOn()));
+            if(key.createdBy() != null) {
+                executionsMapped.add(TestCaseAssociatedData.createExecutionAssociatedData(key.testCaseId(),
+                        testCase.getValue(),
+                        key.createdBy() == null ? null : key.createdBy().toString(),
+                        key.createdOn(),
+                        key.modifiedBy(),
+                        key.modifiedOn()));
+            }
         }
         return executionsMapped;
     }
