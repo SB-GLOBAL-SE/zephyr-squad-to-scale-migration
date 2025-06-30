@@ -242,9 +242,9 @@ following entities are supported:
 | Number Field                   |
 
 **Note**:
-    * The fields which are of type **Checkboxes** is mapped to **Select List (Multi Choice)**
-    * The fields which are of type **Radio Buttons** is mapped to **Select List (Single Choice)**
-    * The fields which are of type **Date Time Picker** is mapped to **Date Picker**
+- The fields which are of type **Checkboxes** is mapped to **Select List (Multi Choice)**
+- The fields which are of type **Radio Buttons** is mapped to **Select List (Single Choice)**
+- The fields which are of type **Date Time Picker** is mapped to **Date Picker**
 
 
 ### What it doesn't do
