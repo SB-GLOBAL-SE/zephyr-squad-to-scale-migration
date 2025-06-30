@@ -197,6 +197,19 @@ following entities are supported:
 - Test Execution custom fields (custom fields which are enabled to project)
 - Test Execution steps and attachments
 - Custom Test Execution status and Test Execution step status
+- **Automated attachments import**: The script generates a CSV file with the attachments mapping, it does import automatically using a flag. 
+   flag set to false will not import automatically the same can be done manually through command line or a third-party tool.
+- **Update test case audit fields**: The script generates a CSV file with the test case mapping, it does import automatically using a flag.
+  flag set to false will not import automatically the same can be done manually through command line or a third-party tool. 
+    * Created By.
+    * Created On.
+- **Update test execution audit fields**: The script generates a CSV file with the test execution mapping, it does import automatically using a flag.
+  flag set to false will not import automatically the same can be done manually through command line or a third-party tool.
+    * Created By.
+    * Created On.
+    * Executed By(if test case executed)
+    * Executed On(if test case executed)
+
 
 **Supported Test Case Custom fields**:
 
@@ -228,26 +241,10 @@ following entities are supported:
 | Date Time Picker               |
 | Number Field                   |
 
-**Note**: 
-    1. The fields which are of type **Checkboxes** is mapped to **Select List (Multi Choice)**
-    2. The fields which are of type **Radio Buttons** is mapped to **Select List (Single Choice)**
-    3. The fields which are of type **Date Time Picker** is mapped to **Date Picker**
-
-
-- **Automated attachments import**: The script generates a CSV file with the attachments mapping, it does import automatically using a flag. 
-   flag set to false will not import automatically the same can be done manually through command line or a third-party tool.
-
-- **Update test case audit fields**: The script generates a CSV file with the test case mapping, it does import automatically using a flag.
-  flag set to false will not import automatically the same can be done manually through command line or a third-party tool. 
-    * Created By.
-    * Created On.
-
-- **Update test execution audit fields**: The script generates a CSV file with the test execution mapping, it does import automatically using a flag.
-  flag set to false will not import automatically the same can be done manually through command line or a third-party tool.
-    * Created By.
-    * Created On.
-    * Executed By(if test case executed)
-    * Executed On(if test case executed)
+**Note**:
+    * The fields which are of type **Checkboxes** is mapped to **Select List (Multi Choice)**
+    * The fields which are of type **Radio Buttons** is mapped to **Select List (Single Choice)**
+    * The fields which are of type **Date Time Picker** is mapped to **Date Picker**
 
 
 ### What it doesn't do
