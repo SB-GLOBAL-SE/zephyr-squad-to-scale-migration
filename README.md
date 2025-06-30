@@ -121,6 +121,7 @@ Ensure Java 17 is installed on your machine. Verify by running:
 | attachmentsBaseFolder             | Where the attachments are located in the Instance Machine                                                   | 
 | httpVersion                       | Http version to be used in REST API Calls. Supported values `1.1`, `1`, `2`, `2.0`                          | 
 | updateDatabaseFieldsPostMigration | Flag to update the fields in database post migration default set to false.                                  | 
+| jiraDateTimeFormat                | The Date time format in jira server/DC, Default format is `dd/MMM/yy h:mm a`.                               | 
 
 Example:
 
@@ -134,6 +135,7 @@ database=postgresql
 attachmentsBaseFolder=/home/ubuntu/jira/data/attachments/
 #this is to update the database fields of test case, test execution post migration using script
 updateDatabaseFieldsPostMigration=false
+jiraDateTimeFormat=dd/MMM/yy h:mm a
 ```
 
 ##### database.properties
@@ -186,11 +188,67 @@ This script is capable of migrating the Zephyr Squad entities, along with their 
 following entities are supported:
 
 - Test Cases and attachments
+- Test Case status, priority and components
+- Test Case custom fields (Mandatory custom fields which are added to project)
 - Test Steps and attachments
+- Test step custom fields (custom fields which are enabled to project)
 - Cycles
 - Test Executions and attachments
+- Test Execution custom fields (custom fields which are enabled to project)
 - Test Execution steps and attachments
 - Custom Test Execution status and Test Execution step status
+
+**Supported Test Case Custom fields**:
+
+| Field Types                    |
+|--------------------------------|
+| Text Field (single line)       | 
+| Text Field (multi-line)        | 
+| Select List (single choice)    | 
+| Select List (multiple choices) | 
+| Radio Buttons                  | 
+| Checkboxes                     |
+| User Picker (single user)      |
+| Date Picker                    |
+| Date Time Picker               |
+| Number Field                   |
+
+
+**Supported Test Exceution/Test Step Custom fields**:
+
+| Field Types                    |
+|--------------------------------|
+| Text Field (single line)       | 
+| Text Field (multi-line)        | 
+| Select List (single choice)    | 
+| Select List (multiple choices) | 
+| Radio Buttons                  | 
+| Checkboxes                     |
+| Date Picker                    |
+| Date Time Picker               |
+| Number Field                   |
+
+**Note**: 
+    1. The fields which are of type **Checkboxes** is mapped to **Select List (Multi Choice)**
+    2. The fields which are of type **Radio Buttons** is mapped to **Select List (Single Choice)**
+    3. The fields which are of type **Date Time Picker** is mapped to **Date Picker**
+
+
+- **Automated attachments import**: The script generates a CSV file with the attachments mapping, it does import automatically using a flag. 
+   flag set to false will not import automatically the same can be done manually through command line or a third-party tool.
+
+- **Update test case audit fields**: The script generates a CSV file with the test case mapping, it does import automatically using a flag.
+  flag set to false will not import automatically the same can be done manually through command line or a third-party tool. 
+    * Created By.
+    * Created On.
+
+- **Update test execution audit fields**: The script generates a CSV file with the test execution mapping, it does import automatically using a flag.
+  flag set to false will not import automatically the same can be done manually through command line or a third-party tool.
+    * Created By.
+    * Created On.
+    * Executed By(if test case executed)
+    * Executed On(if test case executed)
+
 
 ### What it doesn't do
 
@@ -203,9 +261,6 @@ following entities are supported:
   duplicate data if run multiple times on the same project
 - **Clean Zephyr Scale data**: Currently, there is no easy way to clean Zephyr Scale after an unsuccessful/undesirable
   migration. It must be done manually through the UI or Database.
-- **Automated attachments import**: The script generates a CSV file with the attachments mapping, but it does not import
-  it
-  automatically. It must be done manually through a third-party tool or command line.
 
 ## Contributions
 
