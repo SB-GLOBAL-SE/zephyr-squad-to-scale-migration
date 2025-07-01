@@ -1,8 +1,11 @@
 package com.atlassian.migration.app.zephyr.squad.model;
 
+import java.util.List;
+
 public record SquadExecutionItemParsedResponse(
         String id,
         SquadExecutionTypeResponse status,
+        String createdOn,
         Object createdBy,
         String createdByUserName,
         String versionName,
@@ -10,29 +13,35 @@ public record SquadExecutionItemParsedResponse(
         String cycleName,
         String folderName,
         Object executedOn,
+        Object executedBy,
         Object assignedTo,
         String assignedToDisplay,
         String assignedToUserName,
         Object executedOnOrStr,
         Object assignedToOrStr,
-        String folderNameOrStr
+        String folderNameOrStr,
+        List<SquadExecutionDefectResponse> defects
 ) {
 
     public SquadExecutionItemParsedResponse(
             String id,
             SquadExecutionTypeResponse status,
+            String createdOn,
             Object createdBy,
             String createdByUserName,
             String versionName,
             Object htmlComment,
             String executedOn,
+            String executedBy,
             String assignedTo,
             String assignedToDisplay,
             String assignedToUserName,
             String cycleName,
-            String folderName) {
+            String folderName,
+            List<SquadExecutionDefectResponse> defects) {
         this(id,
                 status,
+                createdOn,
                 createdBy,
                 createdByUserName,
                 versionName,
@@ -40,12 +49,14 @@ public record SquadExecutionItemParsedResponse(
                 cycleName,
                 folderName,
                 executedOn,
+                executedBy,
                 assignedTo,
                 assignedToDisplay,
                 assignedToUserName,
                 executedOn == null ? "None" : executedOn,
                 assignedToUserName == null || assignedToDisplay.toLowerCase().contains("inactive")
                         ? "None" : assignedToUserName,
-                folderName == null ? "None" : folderName);
+                folderName == null ? "None" : folderName,
+                defects);
     }
 }

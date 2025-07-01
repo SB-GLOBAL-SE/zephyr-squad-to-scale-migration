@@ -31,7 +31,6 @@ public class ScaleTestCaseRepository {
     );
 
     public ScaleTestCaseRepository(DriverManagerDataSource datasource) {
-
         jdbcTemplate = new JdbcTemplate(datasource);
     }
 
@@ -40,8 +39,10 @@ public class ScaleTestCaseRepository {
         String sql_stmt = buildGetByKeyQuery(key);
 
         List<TestCaseEntity> result = jdbcTemplate.query(sql_stmt, new TestCaseMapper());
-
-        return result.stream().findFirst();
+        if(result != null && result.size() > 0)
+            return result.stream().findFirst();
+        else
+            return null;
     }
 
     private String buildGetByKeyQuery(String key) {

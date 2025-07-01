@@ -1,8 +1,11 @@
 package com.atlassian.migration.app.zephyr.squad.model;
 
+import java.util.List;
+
 public record SquadExecutionItemResponse(
         String id,
         int executionStatus,
+        String createdOn,
         Object createdBy,
         String createdByUserName,
         String versionName,
@@ -10,7 +13,9 @@ public record SquadExecutionItemResponse(
         String cycleName,
         String folderName,
         String executedOn,
+        String executedBy,
         String assignedTo,
         String assignedToDisplay,
-        String assignedToUserName) {
-}
+        String assignedToUserName,
+        List<SquadExecutionDefectResponse> defects
+) { }

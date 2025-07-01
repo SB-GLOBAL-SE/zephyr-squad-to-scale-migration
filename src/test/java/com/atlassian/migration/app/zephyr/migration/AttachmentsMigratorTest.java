@@ -75,7 +75,8 @@ class AttachmentsMigratorTest {
                 attachmentsCopier);
 
         testCaseMap.put(
-                new SquadToScaleTestCaseMap.TestCaseMapKey("1", "SQUAD-1"), "SCALE-1"
+                new SquadToScaleTestCaseMap.TestCaseMapKey("1", "SQUAD-1", "Squad created by", "squad created date",
+                        "squad modified by", "squad modified date"), "SCALE-1"
         );
 
         doNothing().when(attachmentsCopier).copyAttachments(any(), any(), any());
@@ -104,41 +105,23 @@ class AttachmentsMigratorTest {
                 new SquadToScaleTestStepMap.TestStepMapKey("1", "1"), Collections.emptyList()
         ));
 
-
-        testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("1"), "EXEC-1"
-        );
-        testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("2"), "EXEC-2"
-        );
-        testExecMap.put(
-                new SquadToScaleTestExecutionMap.TestExecutionMapKey("3"), "EXEC-3"
-        );
-
         squadToScaleEntitiesMapMock = new SquadToScaleEntitiesMap(
                 new SquadToScaleTestCaseMap(),
                 testStepMap,
-                testExecMap);
+                new SquadToScaleTestExecutionMap(),
+                new SquadToScaleExecutionStepMap());
 
-        when(jiraApiMock.getProjectByKeyWithHistoricalKeys(projectKey)).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList()));
+        when(jiraApiMock.getProjectByKeyWithHistoricalKeys(projectKey)).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList(), Collections.emptyList()));
 
         var stepItemPayloadMock = new SquadGETStepItemPayload();
 
         stepItemPayloadMock.steps = List.of(
-                new ScaleGETStepItemPayload("desc", "data", "res", "1", "1")
+                new ScaleGETStepItemPayload("desc", "data", "res", "1", 1, new ArrayList<>())
         );
 
         var scaleGETStepsPayloadMock = new ScaleGETStepsPayload("KEY-1", "PROJECT", stepItemPayloadMock);
 
         when(scaleApiMock.fetchTestStepsFromTestCaseKey(any())).thenReturn(scaleGETStepsPayloadMock);
-
-        squadAttachmentsMockList.addAll(List.of(
-                squadAttachmentItemResponseMock,
-                squadAttachmentItemResponseMock
-        ));
-
-        when(squadApiMock.fetchTestExecutionAttachmentById(any())).thenReturn(new FetchSquadAttachmentResponse(squadAttachmentsMockList));
-
 
         doNothing().when(attachmentsCsvExporterMock).dump(any(), any(), any());
     }

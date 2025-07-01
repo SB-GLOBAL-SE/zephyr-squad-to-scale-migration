@@ -3,7 +3,6 @@ package com.atlassian.migration.app.zephyr.migration.service;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.*;
 import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCreationPayload;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleTestCaseCustomFieldPayload;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,7 +11,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -61,8 +62,7 @@ public class ScaleTestCasePayloadFacadeTest {
                         new RelatedIssue("2", "JIRA-100", "self", fields)));
 
         jiraIssueFieldResponseMock.components = List.of(
-                new JiraIssueComponent(1, "component", "self"),
-                new JiraIssueComponent(2, "component2", "self")
+                new JiraIssueComponent(1, "component", "self")
         );
         jiraIssueFieldResponseMock.priority = new JiraIssuePriority(1, "HIGH");
         jiraIssueFieldResponseMock.attachment = List.of(
@@ -86,16 +86,18 @@ public class ScaleTestCasePayloadFacadeTest {
                 "REP",
 
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
-
-                new ScaleTestCaseCustomFieldPayload(
-                        "component,component2",
-                        "status_name",
-                        "HIGH"
+                "HIGH",
+                "status_name",
+                "component",
+                Map.of(
+                        "components", "component",
+                        "squadStatus", "status_name",
+                        "squadPriority", "HIGH"
                 )
         );
 
         var receivedPayload = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
 
         assertEquals(expectedPayload, receivedPayload);
     }
@@ -115,16 +117,18 @@ public class ScaleTestCasePayloadFacadeTest {
                 "REP",
 
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
-
-                new ScaleTestCaseCustomFieldPayload(
-                        "component,component2",
-                        "status_name",
-                        "Medium"
+                "Medium",
+                "status_name",
+                "component",
+                Map.of(
+                        "components", "component",
+                        "squadStatus", "status_name",
+                        "squadPriority", "Medium"
                 )
         );
 
         var receivedPayload = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
 
         assertEquals(expectedPayload, receivedPayload);
     }
@@ -144,22 +148,22 @@ public class ScaleTestCasePayloadFacadeTest {
                 "REP",
 
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
-
-                new ScaleTestCaseCustomFieldPayload(
-                        "component,component2",
-                        "status_name",
-                        ""  // Expect empty squadPriority
+                "",
+                "status_name",
+                "component",
+                Map.of(
+                        "components", "component",
+                        "squadStatus", "status_name",
+                        "squadPriority", ""
                 )
         );
     
         var receivedPayloadEmpty = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
-    
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
         jiraIssueFieldResponseMock.priority = new JiraIssuePriority(1, null);
     
         var receivedPayloadNull = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
-    
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
         assertEquals(expectedPayload, receivedPayloadEmpty);
         assertEquals(expectedPayload, receivedPayloadNull);
     }
@@ -176,19 +180,20 @@ public class ScaleTestCasePayloadFacadeTest {
                 "REP",
 
                 List.of("JIRA-100", "JIRA-99"),  // Updated to include both issue links),
-
-                new ScaleTestCaseCustomFieldPayload(
-                        "component,component2",
-                        "status_name",
-                        "HIGH"
+                "HIGH",
+                "status_name",
+                "component",
+                Map.of(
+                        "components", "component",
+                        "squadStatus", "status_name",
+                        "squadPriority", "HIGH"
                 )
         );
     
         jiraIssueFieldResponseMock.description = "";
     
         var receivedPayload = sutScaleTestCasePayloadFacade
-                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock);
-    
+                .createTestCasePayload(jiraIssuesResponseCompleteMock, projectKeyMock, new HashMap<>());
         verify(jiraApiMock, never()).convertJiraTextFormattingToHtml(any());
         assertEquals(expectedPayload, receivedPayload);
     }}

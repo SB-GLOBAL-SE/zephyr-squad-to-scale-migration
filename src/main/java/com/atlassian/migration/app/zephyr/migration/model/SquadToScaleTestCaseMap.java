@@ -15,7 +15,11 @@ public class SquadToScaleTestCaseMap extends HashMap<SquadToScaleTestCaseMap.Tes
 
     public record TestCaseMapKey(
             String testCaseId,
-            String testCaseKey
+            String testCaseKey,
+            Object createdBy,
+            String createdOn,
+            String modifiedBy,
+            String modifiedOn
     ){}
 
 

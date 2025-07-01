@@ -30,7 +30,7 @@ _Postgresql only_
 
 ```sql
 psql
--U <username> -d <db_name> -c "\COPY \"AO_4D28DD_ATTACHMENT\" (\"FILE_NAME\",\"FILE_SIZE\",\"NAME\",\"PROJECT_ID\",\"USER_KEY\",\"TEMPORARY\",\"CREATED_ON\",\"MIME_TYPE\",\"TEST_CASE_ID\",\"STEP_ID\",\"TEST_RESULT_ID\") FROM /<CSV_FILE_NAME>.csv delimiter ',' CSV HEADER"
+-U <username> -d <db_name> -c "\COPY \"AO_4D28DD_ATTACHMENT\" (\"FILE_NAME\",\"FILE_SIZE\",\"NAME\",\"PROJECT_ID\",\"USER_KEY\",\"TEMPORARY\",\"CREATED_ON\",\"MIME_TYPE\",\"TEST_CASE_ID\",\"STEP_ID\",\"TEST_RESULT_ID\",\"TEST_SCRIPT_RESULT_ID\") FROM /<CSV_FILE_NAME>.csv delimiter ',' CSV HEADER"
 ```
 
 ## Installation
@@ -108,14 +108,18 @@ Ensure Java 17 is installed on your machine. Verify by running:
 
 ##### app.properties
 
-| Fields                   | Used For                                                                                                    |
-|--------------------------|-------------------------------------------------------------------------------------------------------------|
-| host                     | Public address of Jira Instance                                                                             |
-| batchSize                | How many Test Cases are processed per batch. Default is 100.                                                |
-| attachmentsMappedCsvFile | The name of the resulting csv generated during the migration                                                |
-| database                 | Name of the database used in the instance. Supported values are `postgresql`, `oracle`, `mssql` and `mysql` |
-| attachmentsBaseFolder    | Where the attachments are located in the Instance Machine                                                   | 
-| httpVersion              | Http version to be used in REST API Calls. Supported values `1.1`, `1`, `2`, `2.0`                          |
+| Fields                            | Used For                                                                                                    |
+|-----------------------------------|-------------------------------------------------------------------------------------------------------------|
+| host                              | Public address of Jira Instance                                                                             |
+| batchSize                         | How many Test Cases are processed per batch. Default is 100.                                                |
+| attachmentsMappedCsvFile          | The name of the resulting csv generated during the migration                                                |
+| testCaseMappedCsvFile             | The name of the resulting csv generated during the migration for test case                                  |
+| testExecutionMappedCsvFile        | The name of the resulting csv generated during the migration for test execution                             |
+| database                          | Name of the database used in the instance. Supported values are `postgresql`, `oracle`, `mssql` and `mysql` |
+| attachmentsBaseFolder             | Where the attachments are located in the Instance Machine                                                   | 
+| httpVersion                       | Http version to be used in REST API Calls. Supported values `1.1`, `1`, `2`, `2.0`                          | 
+| updateDatabaseFieldsPostMigration | Flag to update the fields in database post migration default set to false.                                  | 
+| jiraDateTimeFormat                | The Date time format in jira server/DC, Default format is `dd/MMM/yy h:mm a`.                               | 
 
 Example:
 
@@ -123,9 +127,14 @@ Example:
 host=https://my-jira-instance-url.com
 batchSize=100
 attachmentsMappedCsvFile=AO_4D28DD_ATTACHMENT.csv
+testCaseMappedCsvFile=AO_4D28DD_TEST_CASE.csv
+testExecutionMappedCsvFile=AO_4D28DD_TEST_RESULT.csv
 database=postgresql
 attachmentsBaseFolder=/home/ubuntu/jira/data/attachments/
 httpVersion=2
+#this is to update the database fields of test case, test execution post migration using script
+updateDatabaseFieldsPostMigration=false
+jiraDateTimeFormat=dd/MMM/yy h:mm a
 ```
 
 ##### database.properties
@@ -178,10 +187,66 @@ APIs documentation:
 This script is capable of migrating the Zephyr Squad entities, along with their attachments, to Zephyr Scale. The
 following entities are supported:
 
-- Test Cases and attachments 
+
+- Test Cases and attachments
+- Test Case status, priority and components
+- Test Case custom fields (Mandatory custom fields which are added to project)
 - Test Steps and attachments
-- Test Cycles
-- Test Executions and attachments 
+- Test step custom fields (custom fields which are enabled to project)
+- Cycles
+- Test Executions and attachments
+- Test Execution custom fields (custom fields which are enabled to project)
+- Test Execution steps and attachments
+- Custom Test Execution status and Test Execution step status
+- **Automated attachments import**: The script generates a CSV file with the attachments mapping, it does import automatically using a flag. 
+   flag set to false will not import automatically the same can be done manually through command line or a third-party tool.
+- **Update test case audit fields**: The script generates a CSV file with the test case mapping, it does import automatically using a flag.
+  flag set to false will not import automatically the same can be done manually through command line or a third-party tool. 
+    * Created By.
+    * Created On.
+- **Update test execution audit fields**: The script generates a CSV file with the test execution mapping, it does import automatically using a flag.
+  flag set to false will not import automatically the same can be done manually through command line or a third-party tool.
+    * Created By.
+    * Created On.
+    * Executed By(if test case executed)
+    * Executed On(if test case executed)
+
+
+**Supported Test Case Custom fields**:
+
+| Field Types                    |
+|--------------------------------|
+| Text Field (single line)       | 
+| Text Field (multi-line)        | 
+| Select List (single choice)    | 
+| Select List (multiple choices) | 
+| Radio Buttons                  | 
+| Checkboxes                     |
+| User Picker (single user)      |
+| Date Picker                    |
+| Date Time Picker               |
+| Number Field                   |
+
+
+**Supported Test Exceution/Test Step Custom fields**:
+
+| Field Types                    |
+|--------------------------------|
+| Text Field (single line)       | 
+| Text Field (multi-line)        | 
+| Select List (single choice)    | 
+| Select List (multiple choices) | 
+| Radio Buttons                  | 
+| Checkboxes                     |
+| Date Picker                    |
+| Date Time Picker               |
+| Number Field                   |
+
+**Note**:
+- The fields which are of type **Checkboxes** is mapped to **Select List (Multi Choice)**
+- The fields which are of type **Radio Buttons** is mapped to **Select List (Single Choice)**
+- The fields which are of type **Date Time Picker** is mapped to **Date Picker**
+
   
 ### Data Mapping
 
@@ -217,13 +282,6 @@ following entities are supported:
 | Folder                        | Custom Field - folderName     | The system creates a custom field for test execution in Scale folderName value           |
 | Attachments                   | Attachments                   | Attachments attached at the test execution entity will migrate. NOT test step executions |
  
-#### Test Cycle Mappings
-
-| **Squad Test Cycle Field**| **Scale Test Cycle Field**| **Description**                                      |
-|---------------------------|---------------------------|------------------------------------------------------|
-| Test Cycle                | Name                      | The system migrates the test cycle name.             |
-| Test Cases                |Test Cases                 | The system migrates the test cases within that cycle.|
-
 
 
 ### What it doesn't do
@@ -237,11 +295,6 @@ following entities are supported:
   duplicate data if run multiple times on the same project
 - **Clean Zephyr Scale data**: Currently, there is no easy way to clean Zephyr Scale after an unsuccessful/undesirable
   migration. It must be done manually through the UI or Database.
-- **Automated attachments import**: The script generates a CSV file with the attachments mapping, but it does not import
-  it
-  automatically. It must be done manually through a third-party tool or command line.
-- **Migrate Custom Statuses or Priorities**: If you use priorities, test case statuses, or test execution statuses beyond the default values, then you must migrate those prior to running the utility. Start-up.py is an example for test execution statuses.
-- **Migrate Test Execution Step Information**: The framework does NOT migrate test execution step statuses, execution step defects, execution step attachments, and execution step comments.
 
 
 ## Common Errors and Resolutions
@@ -273,6 +326,7 @@ You must parse the `app.log` file that gets generated to understand the failure,
 - **Resolution:** Change the `host` parameter in `app.properties` to `http://localhost:8080` instead of host=`<https://your-jira-instance.atlassian.net>`
 
 
+
 ## Contributions
 
 Contributions to Zephyr Squad to Scale Migration script are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for
@@ -284,6 +338,4 @@ Copyright (c) 2024 Atlassian US., Inc.
 Apache 2.0 licensed, see [LICENSE](LICENSE) file.
 
 [![With â¤ï¸ from Atlassian](https://raw.githubusercontent.com/atlassian-internal/oss-assets/master/banner-with-thanks.png)](https://www.atlassian.com)
-
-
 

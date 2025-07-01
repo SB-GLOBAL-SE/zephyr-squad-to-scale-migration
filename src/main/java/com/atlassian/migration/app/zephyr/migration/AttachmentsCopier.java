@@ -24,6 +24,7 @@ public class AttachmentsCopier {
 
     private static final String TEST_STEP_ENTITY = "teststep";
     private static final String TEST_EXECUTION_ENTITY = "schedule";
+    private static final String TEST_EXECUTION_STEP_ENTITY = "teststepresult";
     private static final String FILES_FULL_PERMISSION = "rwxrwxrwx";
     private final String DESTINATION_DIR_PATH;
     private final String baseDir;
@@ -44,6 +45,7 @@ public class AttachmentsCopier {
                 getOriginalProjectKey(key, historicalProjectKeys));
 
         if (projectHistoricalKeys == null) {
+            logger.info("This project has historical keys so attachments are not copied.");
             return;
         }
 
@@ -62,6 +64,11 @@ public class AttachmentsCopier {
                                 attachment.getFileName(),
                                 entityId,
                                 TEST_EXECUTION_ENTITY);
+                case TEST_EXECUTION_STEP ->
+                        originFilePath = getSquadEntityAttachmentPath(projectHistoricalKeys.keysHoldingData,
+                                attachment.getFileName(),
+                                entityId,
+                                TEST_EXECUTION_STEP_ENTITY);
 
                 case TEST_CASE -> {
                     String issueKeyAndNum = attachment.getSquadOriginEntity().key();
@@ -85,7 +92,7 @@ public class AttachmentsCopier {
         Path destinationFilePath = get(new StringBuilder(destinationDir.toString())
                 .append("/")
                 .append(fileName).toString());
-
+        logger.info("copied the file to: "+destinationFilePath);
         try {
             Files.copy(Paths.get(originFilePath), destinationFilePath, REPLACE_EXISTING);
             Files.setPosixFilePermissions(destinationFilePath, PosixFilePermissions.fromString(FILES_FULL_PERMISSION));
@@ -221,7 +228,7 @@ public class AttachmentsCopier {
                     .filter(Files::isDirectory)
                     .map(Path::getFileName)
                     .map(Path::toString)
-                    .anyMatch(fileName -> fileName.equals(TEST_STEP_ENTITY) || fileName.equals(TEST_EXECUTION_ENTITY));
+                    .anyMatch(fileName -> fileName.equals(TEST_STEP_ENTITY) || fileName.equals(TEST_EXECUTION_ENTITY) || fileName.equals(TEST_EXECUTION_STEP_ENTITY));
         } catch (IOException e) {
             return false;
         }

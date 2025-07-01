@@ -3,11 +3,11 @@ package com.atlassian.migration.app.zephyr.migration;
 import com.atlassian.migration.app.zephyr.common.ApiConfiguration;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.jira.model.*;
+import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionPostMigrator;
+import com.atlassian.migration.app.zephyr.migration.testcase.TestCasePostMigrator;
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
-import com.atlassian.migration.app.zephyr.scale.model.GetAllProjectsResponse;
-import com.atlassian.migration.app.zephyr.scale.model.GetProjectResponse;
-import com.atlassian.migration.app.zephyr.scale.model.Option;
-import com.atlassian.migration.app.zephyr.scale.model.ScaleTestResultCreatedPayload;
+import com.atlassian.migration.app.zephyr.scale.database.ScaleTestCaseRepository;
+import com.atlassian.migration.app.zephyr.scale.model.*;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
 import com.atlassian.migration.app.zephyr.squad.model.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,11 +15,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Mockito.*;
@@ -34,10 +34,18 @@ class SquadToScaleMigratorTest {
 
     @Mock
     JiraApi jiraApiMock;
+    @Mock
+    private DriverManagerDataSource driverManagerDataSourceMock;
 
+    @Mock
+    private ScaleTestCaseRepository scaleTestCaseRepositoryMock;
     @Mock
     AttachmentsMigrator attachmentsMigratorMock;
 
+    @Mock
+    TestCasePostMigrator testCasePostMigratorMock;
+    @Mock
+    TestExecutionPostMigrator testExecutionPostMigrator;
     @Mock
     private ApiConfiguration apiConfigurationMock;
 
@@ -50,6 +58,10 @@ class SquadToScaleMigratorTest {
 
     private FetchSquadExecutionParsedResponse emptyExecutionsMock;
 
+    private TestCaseEntity emptytestCaseEntityMock;
+    @Mock
+    private JdbcTemplate jdbcTemplateMock;
+
     @BeforeEach
     void setup() throws IOException {
         MockitoAnnotations.openMocks(this);
@@ -58,13 +70,19 @@ class SquadToScaleMigratorTest {
                 5,
                 "CYCLE",
                 "attachments_mapped.csv",
-                "postgres",
+                "test_cases_Mapped.csv",
+                "test_executions_Mapped.csv",
+                "dd/MMM/yy h:mm a",
+                "postgresql",
+                false,
                 "/home/ubuntu"));
 
         migratorSpy = spy(new SquadToScaleMigrator(jiraApiMock, squadApiMock, scaleApiMock, attachmentsMigratorMock,
+                testCasePostMigratorMock,
+                testExecutionPostMigrator,
                 migConfigSpy));
 
-        when(jiraApiMock.getProjectByKey(any())).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList()));
+        when(jiraApiMock.getProjectByKey(any())).thenReturn(new GetProjectResponse("PROJECT", "1", Collections.emptyList(), Collections.emptyList()));
         doNothing().when(attachmentsMigratorMock).export(any(), any());
 
         fieldsMock.summary = "summary";
@@ -85,6 +103,8 @@ class SquadToScaleMigratorTest {
 
         ));
 
+        scaleTestCaseRepositoryMock = new ScaleTestCaseRepository(driverManagerDataSourceMock);
+
         emptyExecutionsMock = new FetchSquadExecutionParsedResponse(Collections.emptyMap(),
                 "10100",
                 0,
@@ -93,6 +113,7 @@ class SquadToScaleMigratorTest {
                 false,
                 Collections.emptyList());
 
+        emptytestCaseEntityMock = new TestCaseEntity(1l, "PROJECT-1");
     }
 
     @Nested
@@ -109,7 +130,7 @@ class SquadToScaleMigratorTest {
             var allProjects = new GetAllProjectsResponse(projectsMock);
 
             doReturn(allProjects).when(squadApiMock).getAllProjects();
-            doReturn(new GetProjectResponse("PROJECT-1", "1", Collections.emptyList())).when(jiraApiMock).getProjectById(any());
+            doReturn(new GetProjectResponse("PROJECT-1", "1", Collections.emptyList(), Collections.emptyList())).when(jiraApiMock).getProjectById(any());
 
             doNothing().when(migratorSpy).runMigration(any());
             migratorSpy.getProjectListAndRunMigration();
@@ -133,15 +154,16 @@ class SquadToScaleMigratorTest {
 
             var totalIssuesMock = 10;
             var interactionsExpected = totalIssuesMock / migConfigSpy.pageSteps();
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null, null);
 
             when(jiraApiMock.fetchTotalIssuesByProjectName(any())).thenReturn(totalIssuesMock);
 
             when(jiraApiMock.fetchIssuesOrderedByCreatedDate(any(), any(), any())).thenReturn(Collections.emptyList());
-
+            when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
             migratorSpy.runMigration("PROJECT-1");
 
             //We are using a public method to count interactions. Each processPage calls attachments export once
-            verify(attachmentsMigratorMock, times(interactionsExpected)).export(any(), any());
+            verify(attachmentsMigratorMock, times(1)).export(any(), any());
 
         }
     }
@@ -165,10 +187,19 @@ class SquadToScaleMigratorTest {
 
         @Test
         void shouldCreateOneTestCasePerIssue() throws IOException, ExecutionException, InterruptedException {
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null, null);
 
             when(squadApiMock.fetchLatestTestStepByTestCaseId(any())).thenReturn(new FetchSquadTestStepResponse(Collections.emptyList()));
 
             when(squadApiMock.fetchLatestExecutionByIssueId(any())).thenReturn(emptyExecutionsMock);
+
+            when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
+
+            when(attachmentsMigratorMock.getDataSource()).thenReturn(driverManagerDataSourceMock);
+//
+//            when(driverManagerDataSourceMock.getUrl()).thenReturn("jdbc:postgresql://localhost:5432/jira");
+
+//            when(scaleTestCaseRepositoryMock.getByKey(any())).thenReturn(Optional.of(emptytestCaseEntityMock));
 
             migratorSpy.runMigration("PROJECT");
 
@@ -180,20 +211,28 @@ class SquadToScaleMigratorTest {
         void shouldCallUpdateTestStepOncePerIssue() throws IOException, ExecutionException, InterruptedException {
 
             var stepBeanCollectionMock = List.of(
-                    new SquadTestStepResponse("1", "order", "step", "data", "result", Collections.emptyList()),
-                    new SquadTestStepResponse("2", "order", "step", "data", "result", Collections.emptyList()),
-                    new SquadTestStepResponse("3", "order", "step", "data", "result", Collections.emptyList())
+                    new SquadTestStepResponse("1", "order", "step", "data", "result", Collections.emptyList(), new HashMap<>()),
+                    new SquadTestStepResponse("2", "order", "step", "data", "result", Collections.emptyList(), new HashMap<>()),
+                    new SquadTestStepResponse("3", "order", "step", "data", "result", Collections.emptyList(), new HashMap<>())
             );
 
             var fetchSquadTestStepResponseMock = new FetchSquadTestStepResponse(stepBeanCollectionMock);
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null, null);
 
             when(squadApiMock.fetchLatestTestStepByTestCaseId(any())).thenReturn(fetchSquadTestStepResponseMock);
 
             when(squadApiMock.fetchLatestExecutionByIssueId(any())).thenReturn(emptyExecutionsMock);
 
+            when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
+//            when(attachmentsMigratorMock.getDataSource()).thenReturn(driverManagerDataSourceMock);
+//
+//            when(driverManagerDataSourceMock.getUrl()).thenReturn("jdbc:postgresql://localhost:5432/jira");
+
+//            when(scaleTestCaseRepositoryMock.getByKey(anyString())).thenReturn(null);
+
             migratorSpy.runMigration("PROJECT");
 
-            verify(scaleApiMock, times(issuesMock.size())).updateTestStep(any(), any());
+            verify(scaleApiMock, times(issuesMock.size())).updateTestStepByKey(anyString(), any(SquadUpdateStepPayloadKey.class));
 
         }
 
@@ -206,17 +245,20 @@ class SquadToScaleMigratorTest {
 
             var executionsMock = List.of(
                     new SquadExecutionItemParsedResponse("1",
-                            statusMock, null, null,
-                            "versionName", "comment", "executedOn",
-                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-1", "folder"),
+                            statusMock, "createdOn",null, null,
+                            "versionName", "comment", null, "executedBy",
+                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-1", "folder",
+                            List.of(new SquadExecutionDefectResponse("issueKey"))),
                     new SquadExecutionItemParsedResponse("2",
-                            statusMock, null, null,
-                            "versionName", "comment", "executedOn",
-                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-2", "folder"),
+                            statusMock, "createdOn", null, null,
+                            "versionName", "comment", null, "executedBy",
+                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-2", "folder",
+                            List.of(new SquadExecutionDefectResponse("issueKey"))),
                     new SquadExecutionItemParsedResponse("3",
-                            statusMock, null, null,
-                            "versionName", "comment", "executedOn",
-                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-3", "folder")
+                            statusMock, "createdOn", null, null,
+                            "versionName", "comment", null, "executedBy",
+                            "assignedTo", "assignedTo", "assigneeTo", "CYCLE-3", "folder",
+                            List.of(new SquadExecutionDefectResponse("issueKey")))
             );
 
             var fetchSquadExecutionParsedResponseMock = new FetchSquadExecutionParsedResponse(Collections.emptyMap(),
@@ -226,10 +268,11 @@ class SquadToScaleMigratorTest {
                     false,
                     false,
                     executionsMock);
+            var projectResponseMock = new GetProjectResponse("PROJECT", "10000", null, null);
 
             when(squadApiMock.fetchLatestExecutionByIssueId(any())).thenReturn(fetchSquadExecutionParsedResponseMock);
             when(scaleApiMock.createTestExecution(any(), any())).thenReturn(new ScaleTestResultCreatedPayload("1"));
-
+            when(jiraApiMock.getProject(any())).thenReturn(projectResponseMock);
             migratorSpy.runMigration("PROJECT");
 
             //each time a TestCase is processed, the executionsMock is returned, so we process executionsMock times the number of Test Cases

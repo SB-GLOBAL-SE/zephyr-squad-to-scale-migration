@@ -7,6 +7,10 @@ public record MigrationConfiguration(
         int pageSteps,
         String cycleNamePlaceHolder,
         String attachmentsMappedCsvFile,
+        String testCaseCSVFile,
+        String testExecutionCSVFile,
+        String jiraDateTimeFormat,
         String databaseType,
+        Boolean updateDatabaseFieldsPostMigration,
         String attachmentsBaseFolder) {
 }

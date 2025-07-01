@@ -11,10 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.net.http.HttpClient;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,7 +73,7 @@ public class ScaleApiTest {
 
         private final ScaleTestCaseCreationPayload scaleTestCaseCreationPayload =
                 new ScaleTestCaseCreationPayload("KEY-1", "name", "objective",
-                        Collections.emptyList(), "owner", Collections.emptyList(), null);
+                        Collections.emptyList(), "owner", Collections.emptyList(), "priority", "status", "component",null);
 
 
         @Test
@@ -115,8 +112,7 @@ public class ScaleApiTest {
     class WhileInteractingWithTestSteps {
 
         private final String endpoint = String.format(ScaleApi.SCALE_TEST_STEP_ENDPOINT, "TEST-1");
-        private final SquadUpdateStepPayload squadUpdateStepPayload = new SquadUpdateStepPayload(
-                new SquadGETStepItemPayload());
+        private final SquadUpdateStepPayload squadUpdateStepPayload = new SquadUpdateStepPayload(1l, new ScaleStepByStepScript(new SquadGETStepItemPayload()));
 
         @Test
         void shouldGetTestStepFromTestCaseKey() throws ApiException, ZephyrApiException {
@@ -126,13 +122,13 @@ public class ScaleApiTest {
                     "testScript:{" +
                     "type:STEP_BY_STEP, " +
                     "steps:[" +
-                    "{description:desc,testData:data,expectedResult:result,id:1,index:0}]}}";
+                    "{description:desc,testData:data,expectedResult:result,id:1,index:0,customFieldValues:[]}]}}";
 
             doReturn(responseMock).when(scaleApiSpy).sendHttpGet(any());
 
             var squadGETStepItemPayloadExpected = new SquadGETStepItemPayload();
             squadGETStepItemPayloadExpected.steps = List.of(
-                    new ScaleGETStepItemPayload("desc", "data", "result", "1", "0"));
+                    new ScaleGETStepItemPayload("desc", "data", "result", "1", 0, new ArrayList<>()));
 
             var scaleGETStepsPayloadExpected = new ScaleGETStepsPayload("KEY-1",
                     "PROJECT", squadGETStepItemPayloadExpected);
@@ -213,7 +209,8 @@ public class ScaleApiTest {
 
 
         private final ScaleExecutionCreationPayload scaleExecToCreate = new ScaleExecutionCreationPayload(
-                "status", "TEST-1", "user", "comment", "1.0", null);
+                "status", "TEST-1", "user", "executionDate","assignee", "comment", "1.0", List.of("issuekey"),
+                List.of(new ScaleExecutionStepPayload(0, "status", "comment")), null);
 
         private final List<ScaleExecutionCreationPayload> testResultsToCreate = List.of(scaleExecToCreate);
 
@@ -274,7 +271,7 @@ public class ScaleApiTest {
         @Test
         void shouldCallCreateCustomFieldEndpointOnlyOnce() throws ApiException, ZephyrApiException {
 
-            doReturn("").when(scaleApiSpy).sendHttpPost(ScaleApi.CREATE_CUSTOM_FIELD_ENDPOINT,
+            doReturn("{id:1}").when(scaleApiSpy).sendHttpPost(ScaleApi.CREATE_CUSTOM_FIELD_ENDPOINT,
                     scaleCustomFieldPayload);
 
             scaleApiSpy.createCustomField(scaleCustomFieldPayload);

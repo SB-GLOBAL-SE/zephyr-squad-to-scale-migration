@@ -3,8 +3,13 @@ package com.atlassian.migration.app.zephyr;
 import com.atlassian.migration.app.zephyr.common.ApiConfiguration;
 import com.atlassian.migration.app.zephyr.common.DataSourceFactory;
 import com.atlassian.migration.app.zephyr.common.PropertySanitizer;
+import com.atlassian.migration.app.zephyr.common.TimeUtils;
 import com.atlassian.migration.app.zephyr.jira.api.JiraApi;
 import com.atlassian.migration.app.zephyr.migration.*;
+import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionCsvExporter;
+import com.atlassian.migration.app.zephyr.migration.execution.TestExecutionPostMigrator;
+import com.atlassian.migration.app.zephyr.migration.testcase.TestCaseCsvExporter;
+import com.atlassian.migration.app.zephyr.migration.testcase.TestCasePostMigrator;
 import com.atlassian.migration.app.zephyr.scale.api.ScaleApi;
 import com.atlassian.migration.app.zephyr.squad.api.SquadApi;
 import org.slf4j.Logger;
@@ -30,6 +35,10 @@ public class ApplicationMain {
 
             var migrationConfig = loadMigrationConfiguration(args, input);
 
+            // updating default time format in utils may be not best way
+            if(migrationConfig.jiraDateTimeFormat() != null && !migrationConfig.jiraDateTimeFormat().isEmpty()) {
+                TimeUtils.updateDefaultSquadFormat(migrationConfig.jiraDateTimeFormat());
+            }
             logger.info("Starting migration...");
 
             SquadToScaleMigrator migrator = createSquadToScaleMigrator(migrationConfig);
@@ -57,8 +66,12 @@ public class ApplicationMain {
         var pageSteps = Integer.parseInt(prop.getProperty("batchSize"));
         var cycleNamePlaceHolder = prop.getProperty("cycleNamePlaceHolder", "");
         var attachmentsMappedCsvFile = prop.getProperty("attachmentsMappedCsvFile");
+        var testCaseCSVFile = prop.getProperty("testCaseMappedCsvFile");
+        var testExecutionCSVFile = prop.getProperty("testExecutionMappedCsvFile");
+        var jiraDateTimeFormat = prop.getProperty("jiraDateTimeFormat");
         var databaseType = prop.getProperty("database");
         var httpVersion = prop.getProperty("httpVersion");
+        var updateDatabaseFieldsPostMigration = Boolean.parseBoolean(prop.getProperty("updateDatabaseFieldsPostMigration"));
         var attachmentsBaseFolder = PropertySanitizer.sanitizeAttachmentsBaseFolder(prop.getProperty("attachmentsBaseFolder"));
 
         var username = args[0];
@@ -67,7 +80,8 @@ public class ApplicationMain {
         var apiConfig = new ApiConfiguration(host, username, password.toCharArray(), httpVersion);
 
         return new MigrationConfiguration(apiConfig, pageSteps, cycleNamePlaceHolder,
-                attachmentsMappedCsvFile, databaseType, attachmentsBaseFolder);
+                attachmentsMappedCsvFile, testCaseCSVFile, testExecutionCSVFile, jiraDateTimeFormat,
+                databaseType, updateDatabaseFieldsPostMigration, attachmentsBaseFolder);
     }
 
     private static SquadToScaleMigrator createSquadToScaleMigrator(MigrationConfiguration migrationConfig) throws IOException {
@@ -75,6 +89,8 @@ public class ApplicationMain {
         var squadApi = new SquadApi(migrationConfig.apiConfiguration());
         var scaleApi = new ScaleApi(migrationConfig.apiConfiguration());
         var csvExporter = new AttachmentsCsvExporter(migrationConfig.attachmentsMappedCsvFile());
+        var testCaseCsvExporter = new TestCaseCsvExporter(migrationConfig.testCaseCSVFile());
+        var testExecutionCsvExporter = new TestExecutionCsvExporter(migrationConfig.testExecutionCSVFile());
         var attachmentsCopier = new AttachmentsCopier(migrationConfig.attachmentsBaseFolder());
 
         var dataSourceFactory = new DataSourceFactory();
@@ -82,8 +98,12 @@ public class ApplicationMain {
 
         var attachmentsCsvExporter = new AttachmentsMigrator(jiraApi, scaleApi, squadApi, dataSource,
                 csvExporter, attachmentsCopier);
+        var testCaseMigrator = new TestCasePostMigrator(jiraApi, testCaseCsvExporter);
+        var testExecutionMigrator = new TestExecutionPostMigrator(jiraApi, testExecutionCsvExporter);
 
         return new SquadToScaleMigrator(jiraApi, squadApi, scaleApi, attachmentsCsvExporter,
+                testCaseMigrator,
+                testExecutionMigrator,
                 migrationConfig);
     }
 }

@@ -22,6 +22,8 @@ public class JiraApi extends BaseApi {
     public static final String GET_PROJECT_WITH_HISTORICAL_KEYS = GET_PROJECT_BY_KEY_OR_ID_ENDPOINT + "?expand=projectKeys";
     public static final String GET_ISSUE_BY_ID_ENDPOINT = "/rest/api/2/issue/%s";
     public static final String RENDER_JIRA_TEXT_FORMATTING = "/rest/api/1.0/render";
+    public static final String FETCH_PROJECT_CFS = "/rest/api/2/customFields";
+    public static final String FETCH_ISSUE_FIELDS_BY_ISSUE_TYPE = "/rest/api/latest/issue/createmeta/%s/issuetypes/%s?maxResults=200";
 
     public JiraApi(ApiConfiguration config) {
         super(config);
@@ -47,6 +49,16 @@ public class JiraApi extends BaseApi {
     public JiraIssuesResponse getIssueById(String id) throws IOException {
         var response = sendHttpGet(getUri(urlPath(GET_ISSUE_BY_ID_ENDPOINT, id)));
         return gson.fromJson(response, JiraIssuesResponse.class);
+    }
+
+    public JiraIssuesResponse getIssueByIssueKey(String issueKey) throws IOException {
+        var response = sendHttpGet(getUri(urlPath(GET_ISSUE_BY_ID_ENDPOINT, issueKey)));
+        return gson.fromJson(response, JiraIssuesResponse.class);
+    }
+
+    public FetchJiraIssueTypesResponse getIssueFieldsByIssuetype(String projectId, String issueTypeId) throws IOException {
+        var response = sendHttpGet(getUri(urlPath(FETCH_ISSUE_FIELDS_BY_ISSUE_TYPE, projectId, issueTypeId)));
+        return gson.fromJson(response, FetchJiraIssueTypesResponse.class);
     }
 
     public List<Attachment> getIssueAttachmentsByIssueId(String id) throws IOException {
@@ -84,6 +96,20 @@ public class JiraApi extends BaseApi {
         return gson.fromJson(response, listType);
     }
 
+    public List<CustomField> fetchCustomFieldsFromProjectByProjectId(String projectId) throws IOException {
+        Map<String, Object> params = new HashMap<>();
+        params.put("projectIds", projectId);
+
+        var response = sendHttpGet(
+                uri(FETCH_PROJECT_CFS, params
+                )
+        );
+
+        var customFieldResponse = gson.fromJson(response, CustomFieldResponse.class);
+
+        return customFieldResponse.values();
+    }
+
     private FetchJiraIssuesResponse fetchIssuesByJql(Integer startAt, Integer maxResults, String jql) throws IOException {
 
         Map<String, Object> params = new HashMap<>();
@@ -95,7 +121,37 @@ public class JiraApi extends BaseApi {
                 uri(JIRA_SEARCH_ISSUES_ENDPOINT, params)
         );
 
-        return gson.fromJson(response, FetchJiraIssuesResponse.class);
+
+        var jiraIssues = gson.fromJson(response, FetchJiraIssuesResponse.class);
+        return extractCustomFieldsFromResponse(response, jiraIssues);
+
+    }
+
+    public FetchJiraIssuesResponse extractCustomFieldsFromResponse(String jiraIssuesPayloadResponse, FetchJiraIssuesResponse jiraIssues){
+
+        Map<String, Map<String, Object>> issuesCustomField = new HashMap<>();
+        Map<String, Object> payloadMap = gson.fromJson(jiraIssuesPayloadResponse, Map.class);
+        var issues = (List<Map<String, Object>>) payloadMap.get("issues");
+
+        for(var issueMap: issues){
+            var issueId = (String) issueMap.get("id");
+            var fields = (Map<String, Object>) issueMap.get("fields");
+
+            fields.entrySet().stream()
+                    .filter(entry -> entry.getKey().startsWith("customfield_"))
+                    .forEach(entry -> issuesCustomField.computeIfAbsent(issueId, k -> new HashMap<>())
+                            .put(entry.getKey(), entry.getValue()));
+
+        }
+
+        jiraIssues.issues().forEach(issue -> {
+            var issueCustomField = issuesCustomField.get(issue.id());
+            if(issueCustomField != null)
+                issue.fields().customFields.putAll(issueCustomField);
+
+        });
+
+        return jiraIssues;
     }
 
 }
