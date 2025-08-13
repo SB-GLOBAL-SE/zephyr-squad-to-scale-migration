@@ -26,6 +26,7 @@ import java.util.List;
 public class DatabasePostRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabasePostRepository.class);
+    public static final String ORACLE_TIMESTAMP_FORMAT = "'YYYY-MM-DD\"T\"HH24:MI:SS'";
     private final JdbcTemplate jdbcTemplate;
 
     private static final String TEST_CASE_TABLE_NAME = "AO_4D28DD_TEST_CASE";
@@ -61,7 +62,6 @@ public class DatabasePostRepository {
                         logger.error("Updating failed for test case: "+testCaseMapper.getSCALE_TESTCASE_ID(), e);
                     }
                 }
-
             } catch (IOException e) {
                 logger.error("error occurred while updating test case fields."+e.getMessage(), e);
             }
@@ -78,8 +78,11 @@ public class DatabasePostRepository {
     private String buildUpdateTestcaseByKeyQuery(TestCaseMapper testCaseMapper) {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
 
-        var databaseType = DatabaseUtils.defineDatabaseType(datasource);
-        String setfields = " \"CREATED_BY\" = '"+testCaseMapper.getCREATED_BY()+"', \"CREATED_ON\" = '"+testCaseMapper.getCREATED_ON()+"'";
+        String auditCreatedDate = "'" + testCaseMapper.getCREATED_ON() + "'";
+        if(databaseType.equals("oracle")) {
+            auditCreatedDate = "TO_TIMESTAMP('" + testCaseMapper.getCREATED_ON() + "', " + ORACLE_TIMESTAMP_FORMAT + ")";
+        }
+        String setfields = " \"CREATED_BY\" = '" + testCaseMapper.getCREATED_BY() + "', \"CREATED_ON\" = " + auditCreatedDate;
         String schema = datasource.getSchema();
         String sql_stmt = "UPDATE "+schema+".\""+TEST_CASE_TABLE_NAME+ "\" set "+setfields+" WHERE \"KEY\" = '"+testCaseMapper.getSCALE_TESTCASE_ID()+"'";
         if(schema == null){
@@ -193,6 +196,22 @@ public class DatabasePostRepository {
                     stepId+", " +
                     testresultId+", " +
                     scriptResultsId+")";
+        }else if(databaseType.equals("oracle")){
+            String tempstr = Boolean.parseBoolean(row.get(5)) ? "1" : "0";
+            insertQuery = "INSERT INTO "+tableName+" (\"FILE_NAME\", \"FILE_SIZE\", \"NAME\", \"PROJECT_ID\", \"USER_KEY\", \"TEMPORARY\", \"CREATED_ON\", \"MIME_TYPE\", \"TEST_CASE_ID\", \"STEP_ID\", \"TEST_RESULT_ID\", \"TEST_SCRIPT_RESULT_ID\") "
+                    + "VALUES ("+
+                    fileName +", " +
+                    fileSize+ ", " +
+                    name+", " +
+                    projectId+", " +
+                    user+", " +
+                    tempstr+", TO_TIMESTAMP(" +
+                    createdOn+ ", " + ORACLE_TIMESTAMP_FORMAT + "), " +
+                    mimetype+", " +
+                    testcaseId +", " +
+                    stepId+", " +
+                    testresultId+", " +
+                    scriptResultsId+")";
         }
         jdbcTemplate.execute(insertQuery);
     }
@@ -220,8 +239,10 @@ public class DatabasePostRepository {
 
     private String buildUpdateTestScriptResultsByKeyQuery(TestExecutionMapper testExecutionMapper) {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
-        var databaseType = DatabaseUtils.defineDatabaseType(datasource);
-        String executedOn = testExecutionMapper.getEXECUTED_ON() == null ? null : "'" + testExecutionMapper.getEXECUTED_ON() + "'" ;
+        String executedOn = testExecutionMapper.getEXECUTED_ON() == null ? null : "'" + testExecutionMapper.getEXECUTED_ON() + "'";
+        if(executedOn != null && databaseType.equals("oracle")){
+            executedOn = "TO_TIMESTAMP('" + testExecutionMapper.getEXECUTED_ON() + "', " + ORACLE_TIMESTAMP_FORMAT + ")";
+        }
         String setfields = " \"EXECUTION_DATE\" = "+ executedOn +"";
         String sql_stmt = "UPDATE "+datasource.getSchema()+".\""+TEST_SCRIPT_RESULT_TABLE_NAME+ "\" set "+setfields+" WHERE \"TEST_RESULT_ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
         if(datasource.getSchema() == null){
@@ -233,8 +254,11 @@ public class DatabasePostRepository {
 
     private String buildUpdateTestResultsByKeyQuery(TestExecutionMapper testExecutionMapper) {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
-        var databaseType = DatabaseUtils.defineDatabaseType(datasource);
-        String setfields = " \"CREATED_BY\" = '"+testExecutionMapper.getCREATED_BY()+"', \"CREATED_ON\" = '"+testExecutionMapper.getCREATED_ON()+"'";
+        String auditDate = "'" + testExecutionMapper.getCREATED_ON() + "'";
+        if(databaseType.equals("oracle")) {
+            auditDate = "TO_TIMESTAMP('" + testExecutionMapper.getCREATED_ON() + "', " + ORACLE_TIMESTAMP_FORMAT + ")";
+        }
+        String setfields = " \"CREATED_BY\" = '" + testExecutionMapper.getCREATED_BY() + "', \"CREATED_ON\" = " + auditDate;
         String schema = datasource.getSchema();
         String sql_stmt = "UPDATE "+ schema +".\""+TEST_EXECUTION_TABLE_NAME+ "\" set "+setfields+" WHERE \"ID\" = "+testExecutionMapper.getSCALE_EXECUTION_ID();
         if(schema == null){
@@ -245,8 +269,10 @@ public class DatabasePostRepository {
 
     private String buildUpdateTestResultsActualStartDateByKeyQuery(TestExecutionMapper testExecutionMapper) {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
-        var databaseType = DatabaseUtils.defineDatabaseType(datasource);
         String executedOn = testExecutionMapper.getEXECUTED_ON() == null ? null : "'" + testExecutionMapper.getEXECUTED_ON() + "'" ;
+        if(executedOn != null && databaseType.equals("oracle")) {
+            executedOn = "TO_TIMESTAMP('" + testExecutionMapper.getEXECUTED_ON() + "', " + ORACLE_TIMESTAMP_FORMAT + ")";
+        }
         String setfields =  " \"ACTUAL_START_DATE\" = "+executedOn+"";
         if(executedOn == null){
             setfields =  " \"ACTUAL_START_DATE\" = "+executedOn+", "+" \"EXECUTION_DATE\" = "+executedOn+"";
