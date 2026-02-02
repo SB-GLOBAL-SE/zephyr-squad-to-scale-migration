@@ -24,9 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import static com.atlassian.migration.app.zephyr.scale.model.ScaleMigrationTestCaseCustomFieldPayload.MIGRATION_JIRA_SCALE_CUSTOM_FIELD_TYPES;
 
 public class SquadToScaleMigrator {
 
@@ -138,7 +137,7 @@ public class SquadToScaleMigrator {
                 startAt += config.pageSteps();
             }
 
-            scaleCycleService.updateIssueLinksforCycle(projectKey);
+            scaleCycleService.updateIssueLinksforCycle(projectKey, config.paginationSize());
 
             logger.info("Post migrion steps started, attachments copy and export of mappings.");
             attachmentsMigrator.export(squadToScaleEntitiesMap, projectKey);
@@ -444,30 +443,58 @@ public class SquadToScaleMigrator {
             logger.info("Fetching latest Squad test step from " + testCaseItem.getKey().testCaseId() + "...");
 
             var testStepMap = new SquadToScaleTestStepMap();
+            int offset = 0;
+            int batchSize = config.paginationSize();
+            AtomicInteger index = new AtomicInteger();
+            var scaleTestCase = scaleApi.fetchTestCaseByKey(testCaseItem.getValue());
 
-            var squadTestSteps = squadApi.fetchLatestTestStepByTestCaseId(testCaseItem.getKey().testCaseId());
+            var scaleSteps = new SquadUpdateStepPayload(scaleTestCase.id(), new ScaleUpdateTestScript(new SquadGETStepItemPayload()));
 
-            if (squadTestSteps.stepBeanCollection().isEmpty()) {
-                return testStepMap;
+            while(true){
+                logger.info("Fetching and updated steps batch starting at offset " + offset + " ...");
+
+                var squadTestSteps =
+                        squadApi.fetchLatestTestStepByTestCaseId(
+                        testCaseItem.getKey().testCaseId(),
+                        offset,
+                        batchSize
+                );
+                if(squadTestSteps.stepBeanCollection().isEmpty()){
+                    break;
+                }
+
+                if (scaleTestCase != null){
+                    List<SquadTestStepResponse> squadSteps = squadTestSteps.stepBeanCollection();
+
+
+                    scaleSteps.testScript().stepByStepScript().steps.addAll(squadSteps.stream()
+                            .map(e -> ScaleGETStepItemPayload.createScaleGETStepItemPayloadForCreation(
+                                    e.htmlStep(),
+                                    e.htmlData(),
+                                    e.htmlResult(),
+                                    index.getAndIncrement())).toList());
+
+                    testStepMap.put(testCaseItem.getValue(),
+                            squadTestSteps.stepBeanCollection().stream().collect(Collectors
+                                    .toMap(testStepResponse -> new SquadToScaleTestStepMap.TestStepMapKey(
+                                            testStepResponse.id(), testStepResponse.orderId()
+                                    ), SquadTestStepResponse::attachmentsMap)));
+
+                    //only mapping if updateTestStep was successful
+                    testStepMap.put(testCaseItem.getValue(),
+                            squadTestSteps.stepBeanCollection().stream().collect(Collectors
+                                    .toMap(testStepResponse -> new SquadToScaleTestStepMap.TestStepMapKey(
+                                            testStepResponse.id(), testStepResponse.orderId()
+                                    ), SquadTestStepResponse::attachmentsMap)));
+                }
+                if(squadTestSteps.stepBeanCollection().size() < batchSize){
+                    break;
+                }
+                offset = offset + batchSize;
             }
-
-            var steps = new SquadUpdateStepPayload(new SquadGETStepItemPayload());
-
-            steps.testScript().steps = squadTestSteps.stepBeanCollection().stream()
-                    .map(e -> ScaleGETStepItemPayload.createScaleGETStepItemPayloadForCreation(
-                            e.htmlStep(),
-                            e.htmlData(),
-                            e.htmlResult())).toList();
-
-            logger.info("Updating steps for scale test case...");
-            scaleApi.updateTestStep(testCaseItem.getValue(), steps);
-
             //only mapping if updateTestStep was successful
-            testStepMap.put(testCaseItem.getValue(),
-                    squadTestSteps.stepBeanCollection().stream().collect(Collectors
-                            .toMap(testStepResponse -> new SquadToScaleTestStepMap.TestStepMapKey(
-                                    testStepResponse.id(), testStepResponse.orderId()
-                            ), SquadTestStepResponse::attachmentsMap)));
+            scaleApi.updateTestStep(String.valueOf(scaleTestCase.id()), scaleSteps);
+
             return testStepMap;
         } catch (IOException exception) {
             logger.error("Failed to update steps for Scale test case with test case id: " + testCaseItem.getKey().testCaseId() + " " + exception.getMessage(), exception);

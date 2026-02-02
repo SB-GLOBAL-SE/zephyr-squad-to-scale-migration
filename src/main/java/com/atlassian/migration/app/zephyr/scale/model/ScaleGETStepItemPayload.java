@@ -5,7 +5,7 @@ public record ScaleGETStepItemPayload(
         String testData,
         String expectedResult,
         String id,
-        String index
+        int index
 ) {
 
     //To Create a test step on Scale we don't need ID and Index, but we must set it to null, otherwise Scale
@@ -13,14 +13,15 @@ public record ScaleGETStepItemPayload(
     public static ScaleGETStepItemPayload createScaleGETStepItemPayloadForCreation(
             String description,
             String testData,
-            String expectedResult
+            String expectedResult,
+            int index
     ){
         return new ScaleGETStepItemPayload(
                 description,
                 testData,
                 expectedResult,
                 null,
-                null
+                index
         );
     }
 

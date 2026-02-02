@@ -68,6 +68,19 @@ public class SquadApi extends BaseApi {
         return gson.fromJson(response, FetchSquadTestStepResponse.class);
     }
 
+    public FetchSquadTestStepResponse fetchLatestTestStepByTestCaseId(
+            String testCaseId,
+            int offset,
+            int limit
+    ) throws ApiException {
+        var response = sendHttpGet(getUri(
+                urlPath(FETCH_SQUAD_TEST_STEP_ENDPOINT, testCaseId)
+                        + "?offset=" + offset
+                        + "&limit=" + limit
+        ));
+        return gson.fromJson(response, FetchSquadTestStepResponse.class);
+    }
+
     public FetchSquadExecutionParsedResponse fetchLatestExecutionByIssueId(String issueId) throws ApiException {
 
         var response = sendHttpGet(getUri(urlPath(FETCH_SQUAD_EXECUTION_ENDPOINT, issueId)));

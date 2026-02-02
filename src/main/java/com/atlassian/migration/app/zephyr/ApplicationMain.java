@@ -74,6 +74,7 @@ public class ApplicationMain {
         var updateDatabaseFieldsPostMigration = Boolean.parseBoolean(prop.getProperty("updateDatabaseFieldsPostMigration"));
         var ignoreTestResultsStatusCase = Boolean.parseBoolean(prop.getProperty("ignoreTestResultsStatusCase"));
         var attachmentsBaseFolder = PropertySanitizer.sanitizeAttachmentsBaseFolder(prop.getProperty("attachmentsBaseFolder"));
+        var paginationSize = Integer.parseInt(prop.getProperty("paginationSize", "500"));
 
         var username = args[0];
         var password = args[1];
@@ -82,7 +83,7 @@ public class ApplicationMain {
 
         return new MigrationConfiguration(apiConfig, pageSteps, cycleNamePlaceHolder,
                 attachmentsMappedCsvFile, testCaseCSVFile, testExecutionCSVFile, jiraDateTimeFormat,
-                databaseType, updateDatabaseFieldsPostMigration, ignoreTestResultsStatusCase, attachmentsBaseFolder);
+                databaseType, updateDatabaseFieldsPostMigration, ignoreTestResultsStatusCase, attachmentsBaseFolder, paginationSize);
     }
 
     private static SquadToScaleMigrator createSquadToScaleMigrator(MigrationConfiguration migrationConfig) throws IOException {

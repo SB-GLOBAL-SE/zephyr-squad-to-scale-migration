@@ -68,8 +68,8 @@ public class ScaleCycleService implements Resettable {
 
     }
 
-    public void updateIssueLinksforCycle(String projectKey) throws ZephyrApiException {
-        var allCyclesInfo = scaleApi.fetchTestRunsbyProjectKey(projectKey);
+    public void updateIssueLinksforCycle(String projectKey, int paginationSize) throws ZephyrApiException {
+        var allCyclesInfo = scaleApi.fetchTestRunsbyProjectKey(projectKey, paginationSize);
         if(allCyclesInfo == null || allCyclesInfo.results() == null || allCyclesInfo.results().size() < 0){
             logger.info(String.format("No cycles found in given project %s", projectKey));
         }
