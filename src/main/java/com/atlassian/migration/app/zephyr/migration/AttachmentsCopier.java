@@ -88,9 +88,13 @@ public class AttachmentsCopier {
 
         try {
             Files.copy(Paths.get(originFilePath), destinationFilePath, REPLACE_EXISTING);
-            Files.setPosixFilePermissions(destinationFilePath, PosixFilePermissions.fromString(FILES_FULL_PERMISSION));
+            // Only set POSIX permissions on Unix-like systems (Linux, Mac, etc.)
+            if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+                Files.setPosixFilePermissions(destinationFilePath, PosixFilePermissions.fromString(FILES_FULL_PERMISSION));
+            }
         } catch (IOException e) {
-            logger.error("Error copying file: " + originFilePath);
+            logger.error("Error copying file: " + originFilePath, e);
+            throw e;
         }
     }
 
@@ -117,7 +121,10 @@ public class AttachmentsCopier {
             Files.createDirectory(destinationDirPath);
         }
 
-        Files.setPosixFilePermissions(destinationDirPath, PosixFilePermissions.fromString(FILES_FULL_PERMISSION));
+        // Only set POSIX permissions on Unix-like systems (Linux, Mac, etc.)
+        if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+            Files.setPosixFilePermissions(destinationDirPath, PosixFilePermissions.fromString(FILES_FULL_PERMISSION));
+        }
         return destinationDirPath;
     }
 
