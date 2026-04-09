@@ -48,10 +48,12 @@ public class ScaleApi extends BaseApi {
 
             result = gson.fromJson(response, Map.class);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_CASE, e);
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_CASE, CREATE_SCALE_TEST_CASE_ENDPOINT,
+                    gson.toJson(testCaseCreationPayload), e);
         } catch (JsonSyntaxException e) {
             ScaleApiErrorLogger.logAndThrow(
                     String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_CASE_PAYLOAD_PARSE, response),
+                    CREATE_SCALE_TEST_CASE_ENDPOINT, gson.toJson(testCaseCreationPayload),
                     new ApiException(e));
 
         }
@@ -63,7 +65,8 @@ public class ScaleApi extends BaseApi {
         try {
             sendHttpPut(String.format(SCALE_TEST_STEP_ENDPOINT, key), step);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP, key), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP, key),
+                    String.format(SCALE_TEST_STEP_ENDPOINT, key), gson.toJson(step), e);
         }
     }
 
@@ -71,7 +74,8 @@ public class ScaleApi extends BaseApi {
         try {
             sendHttpPut(String.format(FETCH_SCALE_TEST_CASE_BYKEY_ENDPOINT, key), step);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP, key), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP, key),
+                    String.format(FETCH_SCALE_TEST_CASE_BYKEY_ENDPOINT, key), gson.toJson(step), e);
         }
     }
 
@@ -79,7 +83,8 @@ public class ScaleApi extends BaseApi {
         try {
             sendHttpPost(String.format(CREATE_SCALE_TEST_SCRIPT_RESULT_DEFECT_ENDPOINT), step);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP_DEFECT), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_STEP_DEFECT),
+                    CREATE_SCALE_TEST_SCRIPT_RESULT_DEFECT_ENDPOINT, gson.toJson(step), e);
         }
     }
 
@@ -90,7 +95,8 @@ public class ScaleApi extends BaseApi {
 
             return gson.fromJson(response, ScaleGETStepsPayload.class);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TEST_STEP, key), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TEST_STEP, key),
+                    String.format(FETCH_SCALE_TEST_CASE_BYKEY_ENDPOINT, key), "", e);
         }
         return new ScaleGETStepsPayload("", "", new SquadGETStepItemPayload());
     }
@@ -101,7 +107,8 @@ public class ScaleApi extends BaseApi {
             List<ScaleResultsStatus> listofScaleResultsStatus = gson.fromJson(response, new TypeToken<List<ScaleResultsStatus>>(){}.getType());
             return new FetchScaleResultsStatusesResponse(listofScaleResultsStatus);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTRESULTS_STATUS, projectId), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTRESULTS_STATUS, projectId),
+                    String.format(FETCH_SCALE_RESULTS_STATUSES, projectId), "", e);
         }
         return new FetchScaleResultsStatusesResponse(new ArrayList<>());
     }
@@ -112,7 +119,8 @@ public class ScaleApi extends BaseApi {
             FetchScaleTestResults scaleTestResults = gson.fromJson(response, FetchScaleTestResults.class);
             return scaleTestResults;
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTRESULTS_STATUS, testResultId), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTRESULTS_STATUS, testResultId),
+                    String.format(FETCH_SCALE_TEST_RESULTS_ENDPOINT, testResultId), "", e);
         }
         return null;
     }
@@ -128,7 +136,8 @@ public class ScaleApi extends BaseApi {
         try {
             response = sendHttpPost(CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT, params);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_RESULTS_STATUS, e);
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_RESULTS_STATUS,
+                    CREATE_SCALE_TEST_RESULTS_STATUS_ENDPOINT, gson.toJson(params), e);
         }
 
         Map<String, Object> result = gson.fromJson(response, Map.class);
@@ -143,7 +152,8 @@ public class ScaleApi extends BaseApi {
                 ScaleMigrationTestCaseStatusPayload.MIGRATION_TESTCASE_STATUSES.add(testCaseStatusPayload.name());
             });
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_STATUS, projectId), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_STATUS, projectId),
+                    String.format(FETCH_SCALE_TESTCASE_STATUSES, projectId), "", e);
         }
     }
 
@@ -153,7 +163,8 @@ public class ScaleApi extends BaseApi {
             List<ScaleCustomFieldResponse> scaleCustomFieldsResponse = gson.fromJson(response, new TypeToken<List<ScaleCustomFieldResponse>>(){}.getType());
             return scaleCustomFieldsResponse;
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_CUSTOM_FIELDS, projectId), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_CUSTOM_FIELDS, projectId),
+                    String.format(FETCH_SCALE_CUSTOM_FIELDS, projectId, entityType, projectId), "", e);
         }
         return new LinkedList<ScaleCustomFieldResponse>();
     }
@@ -167,7 +178,8 @@ public class ScaleApi extends BaseApi {
         try {
             response = sendHttpPost(CREATE_SCALE_TESTCASE_STATUSES, params);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATING_TESTCASE_STATUS, e);
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATING_TESTCASE_STATUS,
+                    CREATE_SCALE_TESTCASE_STATUSES, gson.toJson(params), e);
         }
 
         Map<String, Object> result = gson.fromJson(response, Map.class);
@@ -182,7 +194,8 @@ public class ScaleApi extends BaseApi {
                 ScaleMigrationTestCasePriorityPayload.MIGRATION_TESTCASE_PRIORITIES.add(priotiy.name());
             });
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_PRIORITY, projectId), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_FETCHING_TESTCASE_PRIORITY, projectId),
+                    String.format(FETCH_SCALE_TESTCASE_PRIORITY, projectId), "", e);
         }
     }
 
@@ -195,7 +208,8 @@ public class ScaleApi extends BaseApi {
         try {
             response = sendHttpPost(CREATE_SCALE_TESTCASE_PRIORITY, params);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATING_TESTCASE_PRIORITY, e);
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATING_TESTCASE_PRIORITY,
+                    CREATE_SCALE_TESTCASE_PRIORITY, gson.toJson(params), e);
         }
 
         Map<String, Object> result = gson.fromJson(response, Map.class);
@@ -213,7 +227,8 @@ public class ScaleApi extends BaseApi {
         try {
             response = sendHttpPost(CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT, params);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_CYCLE, e);
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_CREATE_TEST_CYCLE,
+                    CREATE_SCALE_MIGRATION_TEST_CYCLE_ENDPOINT, gson.toJson(params), e);
 
         }
 
@@ -229,7 +244,8 @@ public class ScaleApi extends BaseApi {
             return new ScalePOSTTestResultPayload(gson.fromJson(response, testResultCreatedPayload));
 
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_RESULTS, cycleKey), e);
+            ScaleApiErrorLogger.logAndThrow(String.format(ScaleApiErrorLogger.ERROR_CREATE_TEST_RESULTS, cycleKey),
+                    String.format(CREATE_SCALE_TEST_RESULTS_ENDPOINT, cycleKey), gson.toJson(datas), e);
         }
         return new ScalePOSTTestResultPayload(Collections.emptyList());
     }
@@ -244,7 +260,8 @@ public class ScaleApi extends BaseApi {
         try {
             sendHttpPost(ENABLE_PROJECT_ENDPOINT, enableProjectPayload);
         } catch (ApiException e) {
-            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_ENABLE_PROJECT, e);
+            ScaleApiErrorLogger.logAndThrow(ScaleApiErrorLogger.ERROR_ENABLE_PROJECT,
+                    ENABLE_PROJECT_ENDPOINT, gson.toJson(enableProjectPayload), e);
         }
     }
 
@@ -264,7 +281,8 @@ public class ScaleApi extends BaseApi {
                 return "";
             }
             ScaleApiErrorLogger.logAndThrow(
-                    ScaleApiErrorLogger.ERROR_CREATE_CUSTOM_FIELD, e
+                    ScaleApiErrorLogger.ERROR_CREATE_CUSTOM_FIELD, CREATE_CUSTOM_FIELD_ENDPOINT,
+                    gson.toJson(scaleCustomFieldPayload), e
             );
             return "";
         }
@@ -276,6 +294,8 @@ public class ScaleApi extends BaseApi {
         } catch (ApiException e) {
             ScaleApiErrorLogger.logAndThrow(
                     "Error while adding option to custom field at " + String.format(ADD_OPTION_TO_CUSTOM_FIELD_ENDPOINT, customFieldId),
+                    String.format(ADD_OPTION_TO_CUSTOM_FIELD_ENDPOINT, customFieldId),
+                    gson.toJson(option),
                     e
             );
         }
@@ -334,6 +354,12 @@ public class ScaleApi extends BaseApi {
 
         public static void logAndThrow(String message, ApiException e) throws ZephyrApiException {
             logger.error(message + " " + e.getMessage(), e);
+            throw new ZephyrApiException(e);
+        }
+
+        public static void logAndThrow(String message, String apiEndpoint, String requestBody, ApiException e) throws ZephyrApiException {
+            logger.error("API Call Failed - Message: {} | Endpoint: {} | Request Body: {} | Error: {}",
+                    message, apiEndpoint, requestBody, e.getMessage(), e);
             throw new ZephyrApiException(e);
         }
     }
