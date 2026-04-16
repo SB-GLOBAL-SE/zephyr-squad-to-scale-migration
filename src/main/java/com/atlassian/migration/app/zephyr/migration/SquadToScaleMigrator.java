@@ -511,11 +511,27 @@ public class SquadToScaleMigrator {
             ScaleTestCaseCreationPayload testCasePayload = this.scaleTestCaseFacade.createTestCasePayload(issue, projectKey, projectTestcaseCustomFieldNames);
             var scaleTestCaseKey = scaleApi.createTestCases(testCasePayload);
 
-            logger.info("Created Scale test Case from Squad test case " + issue.id() + ".");
+            String issueSummary = issue.fields().summary != null ? issue.fields().summary : "N/A";
+            String components = issue.fields().components != null && !issue.fields().components.isEmpty()
+                    ? issue.fields().components.stream().map(c -> c.name()).collect(Collectors.joining(", "))
+                    : "N/A";
+            logger.info("Successfully created Scale Test Case - squadIssueId='{}', squadIssueKey='{}', scaleTestCaseKey='{}', projectKey='{}', summary='{}', components='{}'",
+                    issue.id(), issue.key(), scaleTestCaseKey, projectKey, issueSummary, components);
 
             return scaleTestCaseKey;
         } catch (IOException exception) {
-            logger.error("Failed to create Scale Test Case from Squad test case with id: " + issue.id() + " " + exception.getMessage(), exception);
+            String statusName = issue.fields().status != null ? issue.fields().status.name() : "N/A";
+            String priorityName = issue.fields().priority != null ? issue.fields().priority.name() : "N/A";
+            String summary = issue.fields().summary != null ? issue.fields().summary : "N/A";
+            String components = issue.fields().components != null && !issue.fields().components.isEmpty()
+                    ? issue.fields().components.stream().map(c -> c.name()).collect(Collectors.joining(", "))
+                    : "N/A";
+            String rootCause = exception.getCause() != null ? exception.getCause().getMessage() : "Unknown cause";
+
+            logger.error("Failed to create Scale Test Case - Details: issueId='{}', issueKey='{}', projectKey='{}', " +
+                    "status='{}', priority='{}', description='{}', components='{}', errorMessage='{}', rootCause='{}'",
+                    issue.id(), issue.key(), projectKey, statusName, priorityName, summary, components,
+                    exception.getMessage(), rootCause, exception);
             throw new RuntimeException(exception);
         }
     }
