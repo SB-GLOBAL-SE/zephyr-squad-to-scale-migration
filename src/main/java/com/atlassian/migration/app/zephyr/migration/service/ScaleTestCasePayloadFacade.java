@@ -46,11 +46,19 @@ public class ScaleTestCasePayloadFacade {
         if(components != null && components.size() > 0){
             var firstComponent = components.get(0);
             componentName = firstComponent.name();
+            // Validate that componentName is not null or empty
+            if(componentName == null || componentName.isBlank()){
+                logger.warn("Component name is null or empty for component: " + firstComponent);
+                componentName = null;
+            }
             if(components.size() > 1) {
                 for (var comp : components.subList(1, components.size())) {
                     String cName = comp.name();
-                    if (!labels.contains(cName)) {
+                    // Validate component name before adding to labels
+                    if(cName != null && !cName.isBlank() && !labels.contains(cName)) {
                         labels.add(cName);
+                    } else if (cName == null || cName.isBlank()) {
+                        logger.warn("Skipping empty or null component name for component: " + comp);
                     }
                 }
             }
