@@ -70,9 +70,16 @@ public class ScaleTestCasePayloadFacade {
 
         Map<String,Object> scaleCustomFields = new HashMap<>();
 
-        scaleCustomFields.put("components", getComponentsNames(issue));
-        scaleCustomFields.put("squadStatus", issue.fields().status.name());
-        scaleCustomFields.put("squadPriority", sanitizedPriority);
+        String componentsName = getComponentsNames(issue);
+        if (componentsName != null && !componentsName.isBlank()) {
+            scaleCustomFields.put("components", componentsName);
+        }
+        if (sanitizedStatus != null && !sanitizedStatus.isBlank()) {
+            scaleCustomFields.put("squadStatus", sanitizedStatus);
+        }
+        if (sanitizedPriority != null && !sanitizedPriority.isBlank()) {
+            scaleCustomFields.put("squadPriority", sanitizedPriority);
+        }
         scaleCustomFields.putAll(getCustomFieldsToMigrate(issue, projectTestcaseCustomFieldNames));
 
         return new ScaleTestCaseCreationPayload(
@@ -100,8 +107,11 @@ public class ScaleTestCasePayloadFacade {
                     var customFieldProps = projectTestcaseCustomFieldNames
                             .get(customFieldMetadata.getKey());
 
-                    mappedCustomFieldAndValues.put(customFieldProps.name(),
-                            getCustomFieldValue(customFieldMetadata, customFieldProps));
+                    Object customFieldValue = getCustomFieldValue(customFieldMetadata, customFieldProps);
+                    // Only add the custom field if the value is not null and not a blank string
+                    if (customFieldValue != null && !isBlankValue(customFieldValue)) {
+                        mappedCustomFieldAndValues.put(customFieldProps.name(), customFieldValue);
+                    }
                 });
 
         return mappedCustomFieldAndValues;
@@ -266,5 +276,15 @@ public class ScaleTestCasePayloadFacade {
 
     private String getComponentsNames(JiraIssuesResponse issues) {
         return issues.fields().components.stream().map(JiraIssueComponent::name).collect(Collectors.joining(","));
+    }
+
+    private boolean isBlankValue(Object value) {
+        if (value == null) {
+            return true;
+        }
+        if (value instanceof String) {
+            return ((String) value).isBlank();
+        }
+        return false;
     }
 }
