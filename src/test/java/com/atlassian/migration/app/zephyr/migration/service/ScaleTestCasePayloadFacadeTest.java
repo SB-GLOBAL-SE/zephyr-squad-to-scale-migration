@@ -153,8 +153,7 @@ public class ScaleTestCasePayloadFacadeTest {
                 "component",
                 Map.of(
                         "components", "component",
-                        "squadStatus", "status_name",
-                        "squadPriority", ""
+                        "squadStatus", "status_name"
                 )
         );
     
