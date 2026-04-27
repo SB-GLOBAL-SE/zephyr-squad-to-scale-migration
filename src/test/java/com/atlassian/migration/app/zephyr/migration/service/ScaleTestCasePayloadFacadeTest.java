@@ -59,6 +59,10 @@ public class ScaleTestCasePayloadFacadeTest {
                 new IssueLink("1", "self",
                         linkType,
                         new RelatedIssue("1", "JIRA-99", "self", fields),
+                        new RelatedIssue("2", "JIRA-100", "self", fields)),
+                new IssueLink("2", "self",
+                        linkType,
+                        new RelatedIssue("1", "JIRA-99", "self", fields),
                         new RelatedIssue("2", "JIRA-100", "self", fields)));
 
         jiraIssueFieldResponseMock.components = List.of(

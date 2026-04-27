@@ -54,7 +54,7 @@ public class ScaleTestExecutionPayloadFacadeTest {
                 "assignee",
                 "cycle",
                 "folder",
-                List.of(new SquadExecutionDefectResponse("issueKey")));
+                List.of(new SquadExecutionDefectResponse("issueKey"), new SquadExecutionDefectResponse("issueKey")));
 
         var expectedScaleExecutionPayload = new ScaleExecutionCreationPayload(
                 "Pass",

@@ -61,7 +61,7 @@ public class ScaleTestExecutionPayloadFacade implements Resettable {
         List<String> defects = new ArrayList<String>();
         if(executionData.defects() != null && executionData.defects().size() > 0){
             executionData.defects().forEach( defect -> {
-                if(defect.key() != null && !defect.key().isEmpty()) {
+                if(defect.key() != null && !defect.key().isEmpty() && !defects.contains(defect.key())) {
                     defects.add(defect.key());
                 }
             });
