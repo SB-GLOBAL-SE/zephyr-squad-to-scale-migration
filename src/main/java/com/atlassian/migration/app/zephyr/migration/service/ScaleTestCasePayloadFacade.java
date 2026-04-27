@@ -270,8 +270,9 @@ public class ScaleTestCasePayloadFacade {
                     Stream<String> inward = e.inwardIssue() != null ? Stream.of(e.inwardIssue().key()) : Stream.empty();
                     return Stream.concat(outward, inward);
                 })
+                .distinct()
                 .toList();
-}
+    }
 
 
     private String getComponentsNames(JiraIssuesResponse issues) {
