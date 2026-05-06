@@ -65,7 +65,7 @@ public class TestCasePostMigrator {
             SquadToScaleTestCaseMap.TestCaseMapKey key = testCase.getKey();
             executionsMapped.add(TestCaseAssociatedData.createExecutionAssociatedData(key.testCaseId(),
                     testCase.getValue(),
-                    key.createdBy().toString(),
+                    key.createdBy() != null ? key.createdBy().toString() : null,
                     key.createdOn(),
                     key.modifiedBy(),
                     key.modifiedOn()));
