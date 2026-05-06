@@ -65,7 +65,7 @@ public class TestExecutionPostMigrator {
             SquadToScaleTestExecutionMap.TestExecutionMapKey key = testExecution.getKey();
             executionsMapped.add(TestExecutionAssociatedData.createExecutionAssociatedData(key.testExecutionId(),
                     testExecution.getValue(),
-                    key.createdBy().toString(),
+                    key.createdBy() != null ? key.createdBy().toString() : null,
                     key.createdOn(),
                     key.modifiedBy(),
                     key.modifiedOn(),
