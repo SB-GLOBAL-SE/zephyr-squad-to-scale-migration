@@ -37,6 +37,10 @@ psql
 
 ### Prerequisites
 
+**Zephyr (formerly Zephyr Scale) 12.5.0-X or later**
+
+Ensure that Zephyr (formerly Zephyr Scale) version 12.5.0-X or later is installed on your Jira instance before running the migration.
+
 **Java 17**
 
 Ensure Java 17 is installed on your machine. Verify by running:
