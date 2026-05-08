@@ -9,6 +9,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,13 +83,17 @@ public class AttachmentsCopier {
                 continue;
             }
 
-            copyFile(originFilePath, attachment.getFileName());
+            copyFile(originFilePath, attachment.getFileName(), attachment.getCreatedOn());
         }
     }
 
-    void copyFile(String originFilePath, String fileName) throws IOException {
+    void copyFile(String originFilePath, String fileName, String createdOn) throws IOException {
+
+        String yearMonthSubDir = getYearMonthSubDir(createdOn);
+        String destinationDirWithYearMonth = DESTINATION_DIR_PATH + yearMonthSubDir;
 
         var destinationDir = setupDestinationDir(DESTINATION_DIR_PATH);
+        destinationDir = setupDestinationDir(destinationDirWithYearMonth);
 
         Path destinationFilePath = get(new StringBuilder(destinationDir.toString())
                 .append("/")
@@ -102,6 +108,16 @@ public class AttachmentsCopier {
         } catch (IOException e) {
             logger.error("Error copying file: " + originFilePath, e);
             throw e;
+        }
+    }
+
+    String getYearMonthSubDir(String createdOn) {
+        try {
+            LocalDateTime dateTime = LocalDateTime.parse(createdOn, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            return dateTime.getYear() + "/" + String.format("%02d", dateTime.getMonthValue());
+        } catch (Exception e) {
+            logger.warn("Could not parse createdOn date: " + createdOn + ". Using 'unknown' directory.", e);
+            return "unknown";
         }
     }
 
@@ -125,7 +141,7 @@ public class AttachmentsCopier {
     private Path setupDestinationDir(String destinationDir) throws IOException {
         Path destinationDirPath = get(destinationDir);
         if (!Files.exists(destinationDirPath)) {
-            Files.createDirectory(destinationDirPath);
+            Files.createDirectories(destinationDirPath);
         }
 
         // Only set POSIX permissions on Unix-like systems (Linux, Mac, etc.)
