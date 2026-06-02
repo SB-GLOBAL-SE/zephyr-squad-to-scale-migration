@@ -98,11 +98,15 @@ public class AttachmentsCopier {
                 .append("/")
                 .append(fileName).toString());
 
+        logger.debug("Copying file: fileName={}, createdOn={}, source={}, destination={}",
+                fileName, createdOn, originFilePath, destinationFilePath);
         try {
             Files.copy(Paths.get(originFilePath), destinationFilePath, REPLACE_EXISTING);
             Files.setPosixFilePermissions(destinationFilePath, PosixFilePermissions.fromString(FILES_FULL_PERMISSION));
+            logger.info("Copied file: fileName={}, createdOn={}, destination={}", fileName, createdOn, destinationFilePath);
         } catch (IOException e) {
-            logger.error("Error copying file: " + originFilePath);
+            logger.error("Failed to copy file: fileName={}, createdOn={}, source={}, destination={} — {}",
+                    fileName, createdOn, originFilePath, destinationFilePath, e.getMessage(), e);
         }
     }
 

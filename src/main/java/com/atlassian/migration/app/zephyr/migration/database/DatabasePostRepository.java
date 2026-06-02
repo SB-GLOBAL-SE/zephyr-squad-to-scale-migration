@@ -126,13 +126,13 @@ public class DatabasePostRepository {
                         createrow(row);
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("Error reading attachment records from file: {}", attachmentsFileName, e);
                 }
             }catch (Exception e){
-                logger.error("error occurred while reading test execution mapped fields."+e.getMessage());
+                logger.error("Error processing attachment records from file: {}", attachmentsFileName, e);
             }
         }catch (Exception e){
-            logger.error("error occurred while reading test execution mapped fields."+e.getMessage());
+            logger.error("Error resolving attachment file path for: {}", attachmentsFileName, e);
         }
     }
 
@@ -140,7 +140,14 @@ public class DatabasePostRepository {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
         String fileName = row.get(0) == null ? null : "'"+row.get(0)+"'";
         Integer fileSize = row.get(1) == null ? null : Integer.parseInt(row.get(1));
-        String name = row.get(2) == null ? null : "'"+row.get(2)+"'";
+        String name = row.get(2) == null ? null : row.get(2);
+        if(name != null){
+            if(name.contains("'")) {
+                name = "'"+name.replace("'", "''")+"'";
+            }else{
+                name = "'"+name+"'";
+            }
+        }
         Integer projectId = row.get(3) == null ? null : Integer.parseInt(row.get(3));
         String user = row.get(4) == null ? null : "'"+row.get(4)+"'";
         Integer temp = Boolean.parseBoolean(row.get(5)) ? 1 : 0;
@@ -151,21 +158,28 @@ public class DatabasePostRepository {
         Integer stepId = row.get(9) == null ? null : Integer.parseInt(row.get(9));
         Integer testresultId = row.get(10) == null ? null : Integer.parseInt(row.get(10));
         Integer scriptResultsId = row.get(11) == null ? null : Integer.parseInt(row.get(11));
-        String insertQuery = "INSERT INTO "+datasource.getSchema()+".\""+ATTACHMENT_TABLE_NAME+"\" (FILE_NAME, FILE_SIZE, NAME, PROJECT_ID, USER_KEY, TEMPORARY, CREATED_ON, MIME_TYPE, TEST_CASE_ID, STEP_ID, TEST_RESULT_ID, TEST_SCRIPT_RESULT_ID) "
-                + "VALUES ("+
-                fileName +", " +
-                fileSize+ ", " +
-                name+", " +
-                projectId+", " +
-                user+", " +
-                temp+", " +
-                createdOn+", " +
-                mimetype+", " +
-                testcaseId +", " +
-                stepId+", " +
-                testresultId+", " +
-                scriptResultsId+")";
+        String tableName = datasource.getSchema()+".\""+ATTACHMENT_TABLE_NAME+"\"";
+        if(datasource.getSchema() == null){
+            tableName = "\""+ATTACHMENT_TABLE_NAME+"\"";
+        }
+        String tempstr = Boolean.parseBoolean(row.get(5)) ? "true" : "false";
+        String insertQuery = "INSERT INTO "+tableName+" (\"FILE_NAME\", \"FILE_SIZE\", \"NAME\", \"PROJECT_ID\", \"USER_KEY\", \"TEMPORARY\", \"CREATED_ON\", \"MIME_TYPE\", \"TEST_CASE_ID\", \"STEP_ID\", \"TEST_RESULT_ID\", \"TEST_SCRIPT_RESULT_ID\") "
+                    + "VALUES ("+
+                    fileName +", " +
+                    fileSize+ ", " +
+                    name+", " +
+                    projectId+", " +
+                    user+", " +
+                    tempstr+", " +
+                    createdOn+", " +
+                    mimetype+", " +
+                    testcaseId +", " +
+                    stepId+", " +
+                    testresultId+", " +
+                    scriptResultsId+")";
         jdbcTemplate.execute(insertQuery);
+        logger.info("Inserted attachment record — name: {}, fileName: {}, fileSize: {}, projectId: {}, userKey: {}, createdOn: {}, mimeType: {}, testCaseId: {}, stepId: {}, testResultId: {}, scriptResultId: {}",
+                name, fileName, fileSize, projectId, user, createdOn, mimetype, testcaseId, stepId, testresultId, scriptResultsId);
     }
 
     private void updateDatabaseforTestResults(TestExecutionMapper testExecutionMapper) {
