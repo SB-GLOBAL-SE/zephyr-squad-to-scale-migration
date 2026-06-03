@@ -7,9 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.supercsv.cellprocessor.Optional;
-import org.supercsv.cellprocessor.ParseBool;
 import org.supercsv.cellprocessor.ParseInt;
-import org.supercsv.cellprocessor.ParseLong;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvBeanReader;
 import org.supercsv.io.CsvListReader;
@@ -22,8 +20,6 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.List;
 
 
@@ -39,13 +35,16 @@ public class DatabasePostRepository {
 
     private final String testcaseCsvFile;
     private final String testResultCsvFile;
+    private final String databaseType;
 
     public DatabasePostRepository(DriverManagerDataSource datasource,
                                   String testcaseCsvFile,
-                                  String testResultCsvFile) {
+                                  String testResultCsvFile, 
+                                  String databaseType) {
         jdbcTemplate = new JdbcTemplate(datasource);
         this.testcaseCsvFile = testcaseCsvFile;
         this.testResultCsvFile = testResultCsvFile;
+        this.databaseType = databaseType;
     }
 
     public void updateTestCaseFields() {
@@ -138,48 +137,79 @@ public class DatabasePostRepository {
 
     private void createrow(List<String> row) {
         DriverManagerDataSource datasource = (DriverManagerDataSource) jdbcTemplate.getDataSource();
-        String fileName = row.get(0) == null ? null : "'"+row.get(0)+"'";
+
+        String fileName = row.get(0) == null ? null : "'" + row.get(0) + "'";
         Integer fileSize = row.get(1) == null ? null : Integer.parseInt(row.get(1));
-        String name = row.get(2) == null ? null : row.get(2);
-        if(name != null){
-            if(name.contains("'")) {
-                name = "'"+name.replace("'", "''")+"'";
-            }else{
-                name = "'"+name+"'";
+
+        String name = row.get(2);
+        if (name != null) {
+            if (name.contains("'")) {
+                name = "'" + name.replace("'", "''") + "'";
+            } else {
+                name = "'" + name + "'";
             }
         }
+
         Integer projectId = row.get(3) == null ? null : Integer.parseInt(row.get(3));
-        String user = row.get(4) == null ? null : "'"+row.get(4)+"'";
-        Integer temp = Boolean.parseBoolean(row.get(5)) ? 1 : 0;
-        String createdOn = row.get(6) == null ? null : "'"+row.get(6)+"'";
-        String mimetype = row.get(7) == null ? null : "'"+row.get(7)+"'";
+        String user = row.get(4) == null ? null : "'" + row.get(4) + "'";
+
+        boolean temporary = Boolean.parseBoolean(row.get(5));
+        Integer temp = temporary ? 1 : 0;
+
+        String createdOn = row.get(6) == null ? null : "'" + row.get(6) + "'";
+        String mimetype = row.get(7) == null ? null : "'" + row.get(7) + "'";
 
         Integer testcaseId = row.get(8) == null ? null : Integer.parseInt(row.get(8));
         Integer stepId = row.get(9) == null ? null : Integer.parseInt(row.get(9));
         Integer testresultId = row.get(10) == null ? null : Integer.parseInt(row.get(10));
         Integer scriptResultsId = row.get(11) == null ? null : Integer.parseInt(row.get(11));
-        String tableName = datasource.getSchema()+".\""+ATTACHMENT_TABLE_NAME+"\"";
-        if(datasource.getSchema() == null){
-            tableName = "\""+ATTACHMENT_TABLE_NAME+"\"";
+
+        // databaseType = postgresql, mssql or oracle
+        String tableName;
+        String tempStr;
+
+        if ("mssql".equalsIgnoreCase(databaseType)) {
+            tableName = datasource.getSchema() != null
+                    ? datasource.getSchema() + ".[" + ATTACHMENT_TABLE_NAME + "]"
+                    : "[" + ATTACHMENT_TABLE_NAME + "]";
+            tempStr = String.valueOf(temp);
+        } else if ("oracle".equalsIgnoreCase(databaseType)) {
+            tableName = datasource.getSchema() != null
+                    ? datasource.getSchema() + "." + ATTACHMENT_TABLE_NAME
+                    : ATTACHMENT_TABLE_NAME;
+            tempStr = String.valueOf(temp);
+        } else { // postgresql
+            tableName = datasource.getSchema() != null
+                    ? datasource.getSchema() + ".\"" + ATTACHMENT_TABLE_NAME + "\""
+                    : "\"" + ATTACHMENT_TABLE_NAME + "\"";
+            tempStr = temporary ? "true" : "false";
         }
-        String tempstr = Boolean.parseBoolean(row.get(5)) ? "true" : "false";
-        String insertQuery = "INSERT INTO "+tableName+" (\"FILE_NAME\", \"FILE_SIZE\", \"NAME\", \"PROJECT_ID\", \"USER_KEY\", \"TEMPORARY\", \"CREATED_ON\", \"MIME_TYPE\", \"TEST_CASE_ID\", \"STEP_ID\", \"TEST_RESULT_ID\", \"TEST_SCRIPT_RESULT_ID\") "
-                    + "VALUES ("+
-                    fileName +", " +
-                    fileSize+ ", " +
-                    name+", " +
-                    projectId+", " +
-                    user+", " +
-                    tempstr+", " +
-                    createdOn+", " +
-                    mimetype+", " +
-                    testcaseId +", " +
-                    stepId+", " +
-                    testresultId+", " +
-                    scriptResultsId+")";
+
+        String insertQuery =
+                "INSERT INTO " + tableName +
+                        " (\"FILE_NAME\", \"FILE_SIZE\", \"NAME\", \"PROJECT_ID\", \"USER_KEY\", \"TEMPORARY\", " +
+                        "\"CREATED_ON\", \"MIME_TYPE\", \"TEST_CASE_ID\", \"STEP_ID\", \"TEST_RESULT_ID\", \"TEST_SCRIPT_RESULT_ID\") " +
+                        "VALUES (" +
+                        fileName + ", " +
+                        fileSize + ", " +
+                        name + ", " +
+                        projectId + ", " +
+                        user + ", " +
+                        tempStr + ", " +
+                        createdOn + ", " +
+                        mimetype + ", " +
+                        testcaseId + ", " +
+                        stepId + ", " +
+                        testresultId + ", " +
+                        scriptResultsId +
+                        ")";
+
         jdbcTemplate.execute(insertQuery);
-        logger.info("Inserted attachment record — name: {}, fileName: {}, fileSize: {}, projectId: {}, userKey: {}, createdOn: {}, mimeType: {}, testCaseId: {}, stepId: {}, testResultId: {}, scriptResultId: {}",
-                name, fileName, fileSize, projectId, user, createdOn, mimetype, testcaseId, stepId, testresultId, scriptResultsId);
+
+        logger.info(
+                "Inserted attachment record — name: {}, fileName: {}, fileSize: {}, projectId: {}, userKey: {}, temporary: {}, createdOn: {}, mimeType: {}, testCaseId: {}, stepId: {}, testResultId: {}, scriptResultId: {}",
+                name, fileName, fileSize, projectId, user, temporary, createdOn, mimetype,
+                testcaseId, stepId, testresultId, scriptResultsId);
     }
 
     private void updateDatabaseforTestResults(TestExecutionMapper testExecutionMapper) {
