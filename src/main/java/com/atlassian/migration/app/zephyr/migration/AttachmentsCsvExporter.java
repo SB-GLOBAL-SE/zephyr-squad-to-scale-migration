@@ -40,7 +40,12 @@ public class AttachmentsCsvExporter {
         )) {
 
             for (var attachmentMapped : attachmentAssociationData) {
-
+                if(attachmentMapped.getCreatedOn() != null ){
+                    String yearMonthSubDir = AttachmentUtils.getYearMonthSubDir(attachmentMapped.getCreatedOn());
+                    if(yearMonthSubDir != null && !yearMonthSubDir.isBlank() && !yearMonthSubDir.equals("unknown")){
+                        attachmentMapped.setFileName(yearMonthSubDir + "/" + attachmentMapped.getFileName());
+                    }
+                }
                 csvBeanWriter.write(attachmentMapped, headerMapping);
             }
 

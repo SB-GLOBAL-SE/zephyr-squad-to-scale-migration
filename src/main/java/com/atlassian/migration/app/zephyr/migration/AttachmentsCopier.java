@@ -88,7 +88,7 @@ public class AttachmentsCopier {
 
     void copyFile(String originFilePath, String fileName, String createdOn) throws IOException {
 
-        String yearMonthSubDir = getYearMonthSubDir(createdOn);
+        String yearMonthSubDir = AttachmentUtils.getYearMonthSubDir(createdOn);
         String destinationDirWithYearMonth = DESTINATION_DIR_PATH + yearMonthSubDir;
 
         var destinationDir = setupDestinationDir(DESTINATION_DIR_PATH);
@@ -107,16 +107,6 @@ public class AttachmentsCopier {
         } catch (IOException e) {
             logger.error("Failed to copy file: fileName={}, createdOn={}, source={}, destination={} — {}",
                     fileName, createdOn, originFilePath, destinationFilePath, e.getMessage(), e);
-        }
-    }
-
-    String getYearMonthSubDir(String createdOn) {
-        try {
-            LocalDateTime dateTime = LocalDateTime.parse(createdOn, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            return dateTime.getYear() + "/" + String.format("%02d", dateTime.getMonthValue());
-        } catch (Exception e) {
-            logger.warn("Could not parse createdOn date: " + createdOn + ". Using 'unknown' directory.", e);
-            return "unknown";
         }
     }
 
