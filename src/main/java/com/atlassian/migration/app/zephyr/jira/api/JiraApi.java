@@ -6,6 +6,8 @@ import com.atlassian.migration.app.zephyr.common.BaseApi;
 import com.atlassian.migration.app.zephyr.jira.model.*;
 import com.atlassian.migration.app.zephyr.scale.model.GetProjectResponse;
 import com.google.gson.reflect.TypeToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.io.IOException;
@@ -16,6 +18,7 @@ import java.util.Map;
 
 public class JiraApi extends BaseApi {
 
+    private static final Logger logger = LoggerFactory.getLogger(JiraApi.class);
     public static final String JIRA_SEARCH_ISSUES_ENDPOINT = "/rest/api/2/search";
     public static final String JIRA_SEARCH_ASSIGNABLE_USERS = "/rest/api/2/user/assignable/search";
     public static final String GET_PROJECT_BY_KEY_OR_ID_ENDPOINT = "/rest/api/2/project/%s";
@@ -75,7 +78,7 @@ public class JiraApi extends BaseApi {
     }
 
     public FetchJiraIssuesResponse fetchTestCreatedOrderEntry(String projectName, Integer startAt, Integer maxResults) throws IOException {
-        return fetchIssuesByJql(startAt, maxResults, String.format("project = %s AND issuetype = Test ORDER BY createdDate ASC", projectName));
+        return fetchIssuesByJql(startAt, maxResults, String.format("project = \"%s\" AND issuetype = Test ORDER BY createdDate ASC", projectName));
     }
 
 
@@ -111,7 +114,7 @@ public class JiraApi extends BaseApi {
     }
 
     private FetchJiraIssuesResponse fetchIssuesByJql(Integer startAt, Integer maxResults, String jql) throws IOException {
-
+        logger.info("Fetching issues from Jira with JQL: " + jql + ", startAt: " + startAt + ", maxResults: " + maxResults);
         Map<String, Object> params = new HashMap<>();
         params.put("jql", jql);
         params.put("startAt", startAt);
