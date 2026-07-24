@@ -103,7 +103,7 @@ public class SquadToScaleMigrator {
 
     public void runMigration(String projectKey) {
         try {
-            logger.info("Fetching total issues by project key...");
+            logger.info("Fetching total issues by project key... : " + projectKey);
             var total = jiraApi.fetchTotalIssuesByProjectName(projectKey);
 
             //resetting the project custom fields.
